@@ -1,0 +1,154 @@
+from datetime import date
+from typing import List, Optional
+
+from pydantic import BaseModel
+
+from wealth.util.types import StringedEnum
+
+
+class TinkLinkQueryParameters(BaseModel):
+    client_id: str
+    redirect_uri: str
+    market: str
+    locale: str
+    scope: List[str]
+
+
+class GrantType(StringedEnum):
+    authorization_code = "authorization_code"
+    refresh_token = "refresh_token"
+
+
+class OAuthTokenRequestParameters(BaseModel):
+    client_id: str
+    client_secret: str
+    code: Optional[str]
+    refresh_token: Optional[str]
+    grant_type: GrantType
+
+    class Config:
+        extra = "ignore"
+
+
+class Resolution(StringedEnum):
+    daily = "DAILY"
+    weekly = "WEEKLY"
+    monthly = "MONTHLY"
+    monthly_adjusted = "MONTHLY_ADJUSTED"
+    yearly = "YEARLY"
+    all = "ALL"
+
+
+class StatisticType(StringedEnum):
+    balance_by_account = "balances-by-account"
+
+
+class StatisticsRequest(BaseModel):
+    description: str
+    padResultUntilToday: bool = True
+    periods: List[str] = []
+    resolution: Resolution
+    types: List[StatisticType]
+
+
+class StatisticsResponseItem(BaseModel):
+    description: str
+    payload: str
+    period: date
+    resolution: Resolution
+    type: StatisticType
+    userId: str
+    value: float
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    expires_in: int
+    id_hint: Optional[str]
+    refresh_token: str
+    scope: str
+    token_type: str
+
+
+StatisticsResponse = List[StatisticsResponseItem]
+
+
+class Balance(BaseModel):
+    currencyCode: str
+    scale: int
+    unscaledValue: int
+
+
+class Account(BaseModel):
+    accountNumber: str
+    balance: float
+    closed: bool
+    credentialsId: str
+    currencyDenominatedBalance: Balance
+    financialInstitutionId: str
+    id: str
+    name: str
+    ownership: float
+    type: str
+
+    class Config:
+        extra = "ignore"
+
+
+class AccountListResponse(BaseModel):
+    accounts: List[Account]
+
+
+class UserResponse(BaseModel):
+    id: str
+
+    class Config:
+        extra = "ignore"
+
+
+class QueryRequest(BaseModel):
+    accounts: List[str]
+    categories: List[str] = []
+    endDate: Optional[int]
+    externalIds: Optional[List[str]]
+    includeUpcoming: bool = False
+    limit: int = int(1e4)
+    maxAmount: Optional[float]
+    minAmount: Optional[float]
+    offset: int = 0
+    order: str = "ASC"
+    queryString: Optional[str]
+    sort: str = "DATE"
+    startDate: Optional[int]
+
+
+class Transaction(BaseModel):
+    accountId: str
+    amount: float
+    date: int
+    description: Optional[str]
+    id: str
+    notes: Optional[str]
+    timestamp: int
+    type: str
+    userId: str
+
+    class Config:
+        extra = "ignore"
+
+
+class QueryResult(BaseModel):
+    transaction: Transaction
+    type: str
+
+    class Config:
+        extra = "ignore"
+
+
+class QueryResponse(BaseModel):
+    count: int
+    query: QueryRequest
+    results: List[QueryResult]
+
+    class Config:
+        extra = "ignore"
