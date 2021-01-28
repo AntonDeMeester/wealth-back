@@ -1,6 +1,6 @@
 check:
 	mypy wealth
-	pylint wealth
+	pylint wealth --fail-under 9
 	radon cc wealth -a -nc
 
 reformat:

@@ -5,18 +5,23 @@ from pydantic import BaseModel
 
 from wealth.util.types import StringedEnum
 
+from .parameters import TINK_CLIENT_ID, TINK_LINK_CLIENT_ID, TINK_LINK_REDIRECT_URI
+
 
 class TinkLinkQueryParameters(BaseModel):
-    client_id: str
-    redirect_uri: str
-    market: str
-    locale: str
-    scope: List[str]
+    client_id: str = TINK_CLIENT_ID
+    redirect_uri: str = TINK_LINK_REDIRECT_URI
+    scope: Optional[str]
+    market: Optional[str]
+    locale: Optional[str]
+    authorization_code: Optional[str]
+    credentials_id: Optional[str]
 
 
 class GrantType(StringedEnum):
     authorization_code = "authorization_code"
     refresh_token = "refresh_token"
+    client_credentials = "client_credentials"
 
 
 class OAuthTokenRequestParameters(BaseModel):
@@ -25,6 +30,7 @@ class OAuthTokenRequestParameters(BaseModel):
     code: Optional[str]
     refresh_token: Optional[str]
     grant_type: GrantType
+    scope: Optional[str]
 
     class Config:
         extra = "ignore"
@@ -152,3 +158,24 @@ class QueryResponse(BaseModel):
 
     class Config:
         extra = "ignore"
+
+
+class CreateUserRequest(BaseModel):
+    locale: str
+    market: str
+
+
+class CreateUserResponse(BaseModel):
+    user_id: str
+
+
+class AuthorizationGrantDelegateRequest(BaseModel):
+    user_id: str
+    external_user_id: Optional[str]
+    id_hint: str
+    actor_client_id: str = TINK_LINK_CLIENT_ID
+    scope: str
+
+
+class AuthorizationGrantDelegateResponse(BaseModel):
+    code: str

@@ -14,8 +14,10 @@ logger = logging.getLogger(__name__)
 origins = [
     "http://localhost",
     "http://localhost:3000",
+    "http://localhost:8100",
     "http://127.0.0.1",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:8100",
     "https://poker-react-front.herokuapp.com",
 ]
 

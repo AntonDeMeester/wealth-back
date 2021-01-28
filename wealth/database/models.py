@@ -12,7 +12,7 @@ class AccountSource(str, Enum):
 # pylint: disable=abstract-method
 class WealthItem(EmbeddedModel):
     date: str
-    amount: str
+    amount: float
 
 
 # pylint: disable=abstract-method
@@ -23,9 +23,20 @@ class Account(EmbeddedModel):
 
 # pylint: disable=abstract-method
 class User(Model):
+    # Internal
     auth_user_id: UUID4
+
+    # User Profile
+    first_name: str
+    last_name: str
+    market: str = "SE"
+    locale: str = "en_US"
+
+    # Wealth data
     accounts: List[Account] = []
     balances: List[WealthItem] = []
 
     # Tink stuff
     tink_user_id: str = ""
+    tink_authorization_code: str = ""
+    tink_credentials: List[str] = []
