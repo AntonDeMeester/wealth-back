@@ -28,8 +28,8 @@ dnspython = "*"
 fastapi-users = "*"
 mongoengine = "*"
 config2 = "*"
-magnum = "*"
 boto3 = "*"
+mangum = "*"
 
 [requires]
 python_version = "3.9"
