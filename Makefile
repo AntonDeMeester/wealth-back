@@ -31,3 +31,9 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
+
+run:
+	uvicorn wealth.main:app
+
+run-dev:
+	uvicorn wealth.main:app --reload

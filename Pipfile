@@ -12,6 +12,11 @@ isort = "*"
 pytest-cov = "*"
 bpython = "*"
 radon = "*"
+aws-cdk-core = "*"
+aws-cdk-aws-docdb = "*"
+aws-cdk-aws-lambda = "*"
+aws-cdk-aws-apigateway = "*"
+aws-cdk-aws-secretsmanager = "*"
 
 [packages]
 fastapi = "*"
@@ -22,6 +27,9 @@ odmantic = "*"
 dnspython = "*"
 fastapi-users = "*"
 mongoengine = "*"
+config2 = "*"
+magnum = "*"
+boto3 = "*"
 
 [requires]
 python_version = "3.9"

@@ -1,0 +1,9 @@
+infra:
+    vpc:
+        name: wealth-vpc
+    database:
+        user_name: wealth_server
+    lambda:
+        env:
+
+region: eu-west-1
