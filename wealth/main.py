@@ -3,7 +3,7 @@ import logging
 import uvicorn  # type: ignore
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from mangun import Mangum
+from mangum import Mangum
 from mongoengine import connect
 
 from .parameters import env
