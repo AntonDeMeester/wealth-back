@@ -2,7 +2,6 @@ from enum import Enum
 from typing import List
 
 from odmantic import EmbeddedModel, Model
-from pydantic import UUID4
 
 
 class AccountSource(str, Enum):
@@ -23,8 +22,9 @@ class Account(EmbeddedModel):
 
 # pylint: disable=abstract-method
 class User(Model):
-    # Internal
-    auth_user_id: UUID4
+    # Auth
+    email: str
+    password: bytes
 
     # User Profile
     first_name: str

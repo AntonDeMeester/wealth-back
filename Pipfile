@@ -21,15 +21,13 @@ aws-cdk-aws-secretsmanager = "*"
 [packages]
 fastapi = "*"
 uvicorn = "*"
-asyncpg = "*"
 requests = "*"
 odmantic = "*"
-dnspython = "*"
-fastapi-users = "*"
-mongoengine = "*"
 config2 = "*"
 boto3 = "*"
 mangum = "*"
+fastapi-jwt-auth = "*"
+bcrypt = "*"
 
 [requires]
 python_version = "3.9"

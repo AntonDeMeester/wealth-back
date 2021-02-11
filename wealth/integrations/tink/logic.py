@@ -48,17 +48,13 @@ class TinkLogic:
         """
         request = StatisticsRequest(
             description=account_id,
-            periods=[
-                f"{ date.today() - timedelta(days=i):%Y-%m-%d}" for i in range(365 * 3)
-            ],
+            periods=[f"{ date.today() - timedelta(days=i):%Y-%m-%d}" for i in range(365 * 3)],
             resolution=Resolution.daily,
             types=[StatisticType.balance_by_account],
         )
         response = self.api.get_statistics(request)
         print([i.dict() for i in response])
-        return [
-            WealthItem(date=str(item.period), amount=item.value) for item in response
-        ]
+        return [WealthItem(date=str(item.period), amount=item.value) for item in response]
 
     def get_accounts(self) -> List[Account]:
         """
@@ -66,10 +62,7 @@ class TinkLogic:
         """
         response = self.api.get_accounts()
         print(response.dict())
-        return [
-            Account(source=AccountSource.tink, external_id=item.id)
-            for item in response.accounts
-        ]
+        return [Account(source=AccountSource.tink, external_id=item.id) for item in response.accounts]
 
     def get_user_id(self) -> str:
         """
@@ -108,9 +101,7 @@ class TinkLogic:
         Returns the link to use to refresh data and credentials of the users
         Should be followed in the UI
         """
-        assert (
-            credentials_id in user.tink_credentials
-        ), "Credentials not part of the user"
+        assert credentials_id in user.tink_credentials, "Credentials not part of the user"
         client_hint = f"{user.first_name} {user.last_name}"
         auth_code = self.server.get_authorization_code(user.user_id, client_hint)
 

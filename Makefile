@@ -7,9 +7,12 @@ reformat:
 	isort wealth
 	black wealth
 
+check-reformat:
+	isort --check-only wealth tests
+	black --check wealth tests
+
 test:
-	pytest wealth
-	coverage report -m
+	pytest --cov=myproj --cov-report --cov-report html:coverage\/cov_html term tests
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
@@ -29,7 +32,7 @@ clean-pyc: ## remove Python file artifacts
 clean-test: ## remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
-	rm -fr htmlcov/
+	rm -fr coverage/
 	rm -fr .pytest_cache
 
 run:

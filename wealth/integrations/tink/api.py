@@ -68,21 +68,13 @@ class TinkServerApi:
     def _create_user(self, market: str, locale: str, token: str) -> CreateUserResponse:
         request = CreateUserRequest(market=market, locale=locale)
         headers = {"Authorization": f"Bearer {token}"}
-        response = self._tink_request(
-            p.ENDPOINT_USER_CREATE, request.dict(), headers=headers
-        )
+        response = self._tink_request(p.ENDPOINT_USER_CREATE, request.dict(), headers=headers)
         return CreateUserResponse(**response)
 
-    def _authorize_tink_link(
-        self, user_id: str, user_name: str, scope: str, token: str
-    ) -> AuthorizationGrantDelegateResponse:
-        request = AuthorizationGrantDelegateRequest(
-            user_id=user_id, id_hint=user_name, scope=scope
-        )
+    def _authorize_tink_link(self, user_id: str, user_name: str, scope: str, token: str) -> AuthorizationGrantDelegateResponse:
+        request = AuthorizationGrantDelegateRequest(user_id=user_id, id_hint=user_name, scope=scope)
         headers = {"Authorization": f"Bearer {token}"}
-        response = self._tink_request(
-            p.ENDPOINT_GRANT_DELEGATE, request.dict(), headers=headers
-        )
+        response = self._tink_request(p.ENDPOINT_GRANT_DELEGATE, request.dict(), headers=headers)
         return AuthorizationGrantDelegateResponse(**response)
 
     def create_user(self, market: str, locale: str) -> str:
@@ -114,9 +106,7 @@ class TinkApi:
         """Sets the Tink Link code to use for access"""
         self._code = code
 
-    def _tink_http_request(
-        self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None
-    ) -> Dict:
+    def _tink_http_request(self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None) -> Dict:
         if self._refresh_token_expired():
             raise TinkException("Refresh token expired")
         if self._auth_token_expired():
@@ -244,9 +234,7 @@ class TinkLinkApi:
         )
         return self._format_link(p.ENDPOINT_TINK_LINK_CREDENTIALS_ADD, params)
 
-    def get_refresh_credentials_link(
-        self, authorization_code: str, credentials_id: str
-    ) -> str:
+    def get_refresh_credentials_link(self, authorization_code: str, credentials_id: str) -> str:
         """
         Formats a Refresh Credentials link for Tink Link
         This also refreshes the data
@@ -258,9 +246,7 @@ class TinkLinkApi:
         )
         return self._format_link(p.ENDPOINT_TINK_LINK_CREDENTIALS_REFRESH, params)
 
-    def get_authenticate_credentials_link(
-        self, authorization_code: str, credentials_id: str
-    ) -> str:
+    def get_authenticate_credentials_link(self, authorization_code: str, credentials_id: str) -> str:
         """
         Formats a Authenticate Credentials link for Tink Link
         This does not refresh the data
