@@ -1,5 +1,5 @@
 from os import environ
-from typing import Any, Dict, Tuple, Type, Union
+from typing import Any, Dict, Tuple, Type, Union, cast
 
 
 def is_env_variable(name: str, annotation_class: Type, default: Any) -> bool:
@@ -29,7 +29,7 @@ class EnvironmentMeta(type):
             default = namespace.get("key")
             if is_env_variable(key, value, default):
                 setattr(cls, key, environ.get(key, default))
-        return obj
+        return cast("EnvironmentMeta", obj)
 
 
 class Environment(metaclass=EnvironmentMeta):

@@ -1,14 +1,17 @@
 repos:
-# -   repo: local
-#     hooks:
-#     -   id: mypy
-#         name: mypy
-#         entry: pipenv run make check
-#         language: system
-#     -   id: pylint 
-#         name: pylint
-#         entry: pipenv run pylint --ignore=infra,app.py
-#         language: system
+-   repo: local
+    hooks:
+    -   id: mypy
+        name: mypy
+        entry: pipenv run mypy --config-file ./mypy.ini
+        language: system
+        files: 'wealth|tests|infra'
+        types: [python]
+    # -   id: pylint 
+    #     name: pylint
+    #     entry: pipenv run pylint --rcfile ./.pylintrc
+    #     language: system
+    #     types: [python]
 -   repo: https://github.com/psf/black
     rev: 20.8b1
     hooks:
