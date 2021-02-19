@@ -1,7 +1,9 @@
 import json
 
-from aws_cdk import core, aws_ec2 as ec2, aws_docdb as docdb, aws_secretsmanager as sm
-
+from aws_cdk import aws_docdb as docdb
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_secretsmanager as sm
+from aws_cdk import core
 from config2.config import config
 
 
@@ -36,9 +38,7 @@ class WealthDatabaseStack(core.Stack):
             ),
         )
 
-    def create_db(
-        self, sg: ec2.SecurityGroup, user: sm.Secret
-    ) -> docdb.DatabaseCluster:
+    def create_db(self, sg: ec2.SecurityGroup, user: sm.Secret) -> docdb.DatabaseCluster:
         cluster = docdb.DatabaseCluster(
             self,
             "WealthDatabaseCluster",

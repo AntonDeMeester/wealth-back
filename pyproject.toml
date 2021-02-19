@@ -5,4 +5,4 @@ line-length=128
 profile="black"
 src_paths=["wealth", "tests"]
 multi_line_output=3
-line_length=88
+line_length=128

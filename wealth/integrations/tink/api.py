@@ -1,9 +1,8 @@
-import json
 from enum import Enum
 from typing import Dict, Optional
 from urllib.parse import urlencode
 
-import requests
+import httpx
 
 from wealth.integrations.tink.types import (
     AccountListResponse,
@@ -36,77 +35,121 @@ class TinkServerApi:
     """
     Tink methods for any calls done purely with server/Wealth credentials
     without any client/user credentials
+
+    Use a async context manager to use, to make sure the connections are closed properly.
     """
 
+    def __init__(self):
+        self.client: Optional[httpx.AsyncClient] = None
+
+    async def __aenter__(self):
+        self.client = httpx.AsyncClient()
+        return self
+
+    async def __aexit__(self, *excinfo):
+        await self.close()
+
+    async def close(self):
+        await self.client.aclose()
+        self.client = None
+
     # pylint: disable=no-self-use
-    def _tink_request(
+    async def _tink_request(
         self,
         endpoint: str,
         data: Dict,
         headers: Dict = None,
         is_json=True,
     ) -> Dict:
+        if self.client is None:
+            raise TinkException("Client is not initialized. Please use am async context manager with the TinkApi")
         url = p.TINK_BASE_URL + endpoint
         if is_json:
-            response = requests.post(url, json=data, headers=headers)
+            response = await self.client.post(url, json=data, headers=headers)
         else:
-            response = requests.post(url, data, headers=headers)
-        if not response.ok:
+            response = await self.client.post(url, data=data, headers=headers)
+        if response.is_error:
             raise TinkApiException(response.text)
         return response.json()
 
-    def _get_client_access_token(self, scope: str) -> TokenResponse:
+    async def _get_client_access_token(self, scope: str) -> TokenResponse:
         request = OAuthTokenRequestParameters(
             client_id=p.TINK_CLIENT_ID,
             client_secret=p.TINK_CLIENT_SECRET,
             grant_type=GrantType.client_credentials,
             scope=scope,
         )
-        response = self._tink_request(p.ENDPOINT_TOKEN, request.dict(), is_json=False)
+        response = await self._tink_request(p.ENDPOINT_TOKEN, request.dict(), is_json=False)
         return TokenResponse(**response)
 
-    def _create_user(self, market: str, locale: str, token: str) -> CreateUserResponse:
+    async def _create_user(self, market: str, locale: str, token: str) -> CreateUserResponse:
         request = CreateUserRequest(market=market, locale=locale)
         headers = {"Authorization": f"Bearer {token}"}
-        response = self._tink_request(p.ENDPOINT_USER_CREATE, request.dict(), headers=headers)
+        response = await self._tink_request(p.ENDPOINT_USER_CREATE, request.dict(), headers=headers)
         return CreateUserResponse(**response)
 
-    def _authorize_tink_link(self, user_id: str, user_name: str, scope: str, token: str) -> AuthorizationGrantDelegateResponse:
+    async def _authorize_tink_link(
+        self, user_id: str, user_name: str, scope: str, token: str
+    ) -> AuthorizationGrantDelegateResponse:
         request = AuthorizationGrantDelegateRequest(user_id=user_id, id_hint=user_name, scope=scope)
         headers = {"Authorization": f"Bearer {token}"}
-        response = self._tink_request(p.ENDPOINT_GRANT_DELEGATE, request.dict(), headers=headers)
+        response = await self._tink_request(p.ENDPOINT_GRANT_DELEGATE, request.dict(), headers=headers)
         return AuthorizationGrantDelegateResponse(**response)
 
-    def create_user(self, market: str, locale: str) -> str:
+    async def create_user(self, market: str, locale: str) -> str:
         """
         Creates a new empty permanent user in Tink
         Returns the user id
         """
-        token = self._get_client_access_token(p.SCOPE_CREATE_USER).access_token
-        return self._create_user(market, locale, token).user_id
+        token_response = await self._get_client_access_token(p.SCOPE_CREATE_USER)
+        token = token_response.access_token
+        user_response = await self._create_user(market, locale, token)
+        return user_response.user_id
 
-    def get_authorization_code(self, user_id: str, user_name: str) -> str:
+    async def get_authorization_code(self, user_id: str, user_name: str) -> str:
         """
         Gets the Tink Link Authorization code to use in Tink Link
         To be used in a Tink Link request to authorize Tink for a permanent user
         Returns the authorization code
         """
-        token = self._get_client_access_token(p.SCOPE_AUTHORIZATION_GRANT).access_token
+        token_response = await self._get_client_access_token(p.SCOPE_AUTHORIZATION_GRANT)
+        token = token_response.access_token
         scope = "".join(p.AUTHORIZATION_SCOPES)
-        return self._authorize_tink_link(user_id, user_name, scope, token).code
+        code_response = await self._authorize_tink_link(user_id, user_name, scope, token)
+        return code_response.code
 
 
 class TinkApi:
+    """
+    Tink methods for any calls done with User credentials
+
+    Use a async context manager to use, to make sure the connections are closed properly.
+    """
+
     def __init__(self):
         self._code: Optional[str] = None
         self._auth_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
+        self.client: Optional[httpx.AsyncClient] = None
+
+    async def __aenter__(self):
+        self.client = httpx.AsyncClient()
+        return self
+
+    async def __aexit__(self, *excinfo):
+        await self.close()
+
+    async def close(self):
+        await self.client.aclose()
+        self.client = None
 
     def initialise_code(self, code: str):
         """Sets the Tink Link code to use for access"""
         self._code = code
 
-    def _tink_http_request(self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None) -> Dict:
+    async def _tink_http_request(self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None) -> Dict:
+        if self.client is None:
+            raise TinkException("Client is not initialized. Please use am async context manager with the TinkApi")
         if self._refresh_token_expired():
             raise TinkException("Refresh token expired")
         if self._auth_token_expired():
@@ -114,48 +157,49 @@ class TinkApi:
 
         url = p.TINK_BASE_URL + endpoint
         headers = {"Authorization": f"Bearer {self._auth_token}"}
-        response = requests.request(method, url, json=data, headers=headers)
-        if not response.ok:
+        response = await self.client.request(method, url, json=data, headers=headers)
+        if response.is_error:
             raise TinkApiException(response.text)
         return response.json()
 
-    def _tink_post_request(self, *args, **kwargs) -> Dict:
-        return self._tink_http_request(HttpMethod.POST, *args, **kwargs)
+    async def _tink_post_request(self, *args, **kwargs) -> Dict:
+        return await self._tink_http_request(HttpMethod.POST, *args, **kwargs)
 
-    def _tink_get_request(self, *args, **kwargs) -> Dict:
-        return self._tink_http_request(HttpMethod.GET, *args, **kwargs)
+    async def _tink_get_request(self, *args, **kwargs) -> Dict:
+        return await self._tink_http_request(HttpMethod.GET, *args, **kwargs)
 
     # pylint: disable=no-self-use
-    def _tink_auth_request(self, data: OAuthTokenRequestParameters) -> Dict:
+    async def _tink_auth_request(self, data: OAuthTokenRequestParameters) -> Dict:
         """Queries the Token endpoint of Tink with the provided request. Returns the response"""
+        if self.client is None:
+            raise TinkException("Client is not initialized. Please use am async context manager with the TinkApi")
         url = p.TINK_BASE_URL + p.ENDPOINT_TOKEN
-        response = requests.post(url, data.dict())
-        print(json.dumps(response.json(), indent=4))
-        if not response.ok:
+        response = await self.client.post(url, data=data.dict())
+        if response.is_error:
             raise TinkApiException(response.text)
         return response.json()
 
-    def _auth_token_expired(self) -> bool:
+    async def _auth_token_expired(self) -> bool:
         if self._auth_token is None:
             return True
         # Add check if expired
         return False
 
-    def _refresh_token_expired(self) -> bool:
+    async def _refresh_token_expired(self) -> bool:
         if self._auth_token is None:
             return False
         # Add check if expired
         return False
 
-    def _authenticate(self):
+    async def _authenticate(self):
         if not self._refresh_token:
-            response = self._get_initial_token()
+            response = await self._get_initial_token()
         else:
-            response = self._refresh_auth_token()
+            response = await self._refresh_auth_token()
         self._auth_token = response.access_token
         self._refresh_token = response.refresh_token
 
-    def _get_initial_token(self) -> TokenResponse:
+    async def _get_initial_token(self) -> TokenResponse:
         if p.TINK_CLIENT_ID is None or p.TINK_CLIENT_SECRET is None:
             raise TinkException("Tink credentials are not configured")
         if self._code is None:
@@ -166,11 +210,11 @@ class TinkApi:
             client_secret=p.TINK_CLIENT_SECRET,
             grant_type=GrantType.authorization_code,
         )
-        response = self._tink_auth_request(data)
+        response = await self._tink_auth_request(data)
         self._code = None
         return TokenResponse(**response)
 
-    def _refresh_auth_token(self) -> TokenResponse:
+    async def _refresh_auth_token(self) -> TokenResponse:
         if p.TINK_CLIENT_ID is None or p.TINK_CLIENT_SECRET is None:
             raise TinkException("Tink credentials are not configured")
         if self._refresh_token is None:
@@ -181,39 +225,39 @@ class TinkApi:
             client_secret=p.TINK_CLIENT_SECRET,
             grant_type=GrantType.refresh_token,
         )
-        response = self._tink_auth_request(data)
+        response = await self._tink_auth_request(data)
         return TokenResponse(**response)
 
-    def get_statistics(self, request: StatisticsRequest) -> StatisticsResponse:
+    async def get_statistics(self, request: StatisticsRequest) -> StatisticsResponse:
         """
         Queries Statistics from Tink.
         Returns the statistics, in the Tink model
         """
-        response = self._tink_post_request(p.ENDPOINT_STATISTICS, data=request.dict())
+        response = await self._tink_post_request(p.ENDPOINT_STATISTICS, data=request.dict())
         return [StatisticsResponseItem(**item) for item in response]
 
-    def get_accounts(self) -> AccountListResponse:
+    async def get_accounts(self) -> AccountListResponse:
         """
         Queries Accounts from Tink.
         Returns the accounts, in the Tink model
         """
-        response = self._tink_get_request(p.ENDPOINT_ACCOUNT_LIST)
+        response = await self._tink_get_request(p.ENDPOINT_ACCOUNT_LIST)
         return AccountListResponse.parse_obj(response)
 
-    def get_user(self) -> UserResponse:
+    async def get_user(self) -> UserResponse:
         """
         Queries the current user from Tink.
         Returns the statistics, in the Tink model
         """
-        response = self._tink_get_request(p.ENDPOINT_USER)
+        response = await self._tink_get_request(p.ENDPOINT_USER)
         return UserResponse.parse_obj(response)
 
-    def query(self, request: QueryRequest) -> QueryResponse:
+    async def query(self, request: QueryRequest) -> QueryResponse:
         """
         Queries/Searches Transactions in Tink.
         Returns the statistics, in the Tink model
         """
-        response = self._tink_post_request(p.ENDPOINT_QUERY, data=request.dict())
+        response = await self._tink_post_request(p.ENDPOINT_QUERY, data=request.dict())
         return QueryResponse.parse_obj(response)
 
 

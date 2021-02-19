@@ -6,10 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth.exceptions import AuthJWTException
-from mangum import Mangum
-from mongoengine import connect
 
-from .parameters import env
 from .routers import router
 
 logger = logging.getLogger(__name__)
@@ -29,8 +26,6 @@ origins = [
 app = FastAPI()
 app.include_router(router)
 
-if env.MONGO_URL is not None:
-    connect("wealth", host=env.MONGO_URL)
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,8 +40,6 @@ app.add_middleware(
 def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
-
-handler = Mangum(app)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

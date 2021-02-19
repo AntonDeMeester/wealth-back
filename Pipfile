@@ -12,11 +12,7 @@ isort = "*"
 pytest-cov = "*"
 bpython = "*"
 radon = "*"
-aws-cdk-core = "*"
-aws-cdk-aws-docdb = "*"
-aws-cdk-aws-lambda = "*"
-aws-cdk-aws-apigateway = "*"
-aws-cdk-aws-secretsmanager = "*"
+pre-commit = "*"
 
 [packages]
 fastapi = "*"
@@ -25,9 +21,10 @@ requests = "*"
 odmantic = "*"
 config2 = "*"
 boto3 = "*"
-mangum = "*"
 fastapi-jwt-auth = "*"
 bcrypt = "*"
+httpx = "*"
+pymongo = {extras = ["srv"], version = "*"}
 
 [requires]
 python_version = "3.9"

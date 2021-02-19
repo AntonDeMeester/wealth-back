@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
 from aws_cdk import core
-
 from infra.database import WealthDatabaseStack
 from infra.server import WealthServerStack
 from infra.vpc import WealthVpcStack
-
 
 app = core.App()
 

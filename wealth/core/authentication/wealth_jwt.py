@@ -1,6 +1,5 @@
 from typing import Optional
 
-import bcrypt
 from fastapi import WebSocket
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import JWTDecodeError
@@ -14,7 +13,7 @@ from .passwords import check_password
 
 class WealthJwt(AuthJWT):
     async def get_jwt_user(self) -> User:
-        user_id = self.get_jwt_user()
+        user_id = self.get_jwt_subject()
         user = await engine.find_one(User, User.email == user_id)
         if user is None:
             raise JWTDecodeError(

@@ -63,7 +63,7 @@ async def update_user(user: UpdateUser, authorize: WealthJwt = Depends()):
     authorize.fresh_jwt_required()
 
     current_user = await authorize.get_jwt_user()
-    current_user.copy(update=user)
+    current_user.copy(update=user.dict())
     current_user = await engine.save(current_user)
 
     return_user = ViewUser.parse_obj(current_user.dict())

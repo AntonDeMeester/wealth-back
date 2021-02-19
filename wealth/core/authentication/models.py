@@ -1,9 +1,11 @@
+from typing import List
+
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel, ValidationError, root_validator, validator
 
 from wealth.database.api import engine
 from wealth.database.models import User
-from wealth.parameters.env import APP_SECRET
+from wealth.parameters import Environment as env
 
 from .passwords import encode_password, validate_password
 
@@ -27,8 +29,8 @@ class CreateUser(ViewUser):
         errors: List[ValidationError] = []
         try:
             await self.validate_email(self.email)
-        except (ValueError, TypeError, AssertionError) as e:
-            errors.append(str(e))
+        except (ValueError, TypeError, AssertionError) as err:
+            errors.append(str(err))
         if errors:
             raise HTTPException(status_code=422, detail=errors)
 
@@ -39,12 +41,14 @@ class CreateUser(ViewUser):
         return email
 
     @validator("password", "password2")
-    def validate_password(cls, password: str) -> str:
+    # pylint: disable=no-self-argument,no-self-use
+    def validate_password(cls, password: str) -> bytes:
         if not validate_password(password):
             raise ValueError("Invalid password")
         return encode_password(password)
 
     @root_validator(pre=True)
+    # pylint: disable=no-self-argument,no-self-use
     def validate_passwords(cls, values):
         pw1, pw2 = values.get("password"), values.get("password2")
         if pw1 is not None and pw2 is not None and pw1 != pw2:
@@ -63,4 +67,4 @@ class UpdatePassword(BaseModel):
 
 
 class Settings(BaseModel):
-    authjwt_secret_key: str = APP_SECRET
+    authjwt_secret_key: str = env.APP_SECRET

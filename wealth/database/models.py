@@ -12,6 +12,7 @@ class AccountSource(str, Enum):
 class WealthItem(EmbeddedModel):
     date: str
     amount: float
+    account_id: str
 
 
 # pylint: disable=abstract-method

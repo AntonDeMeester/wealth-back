@@ -1,12 +1,10 @@
-from aws_cdk import (
-    aws_lambda as lambda_,
-    aws_apigateway as api_gw,
-    core,
-    aws_ecr as ecr,
-    aws_docdb as docdb,
-    aws_secretsmanager as sm,
-    aws_ec2 as ec2,
-)
+from aws_cdk import aws_apigateway as api_gw
+from aws_cdk import aws_docdb as docdb
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_ecr as ecr
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_secretsmanager as sm
+from aws_cdk import core
 from config2.config import config
 
 
@@ -30,9 +28,7 @@ class WealthServerStack(core.Stack):
         gateway = self.create_gateway(lambda_lith)
 
     def create_repo(self) -> ecr.Repository:
-        return ecr.Repository(
-            self, "WealthServerRepo", repository_name="wealth-back-repo"
-        )
+        return ecr.Repository(self, "WealthServerRepo", repository_name="wealth-back-repo")
 
     def create_lambda(self, repo: ecr.Repository, db_user: sm.Secret):
         env = {**config.infra.get("lambda").env, "MONGO_DB_SECRET_NAME": db_user}

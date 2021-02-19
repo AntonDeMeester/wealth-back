@@ -1,8 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from odmantic import AIOEngine
 
-from wealth.parameters.env import MONGO_URL
-from wealth.parameters.general import MONGO_DATABASE_NAME
+from wealth.parameters import Environment as env
+from wealth.parameters import GeneralParameters as p
 
-client = AsyncIOMotorClient(MONGO_URL, uuidRepresentation="standard")
-engine = AIOEngine(motor_client=client, database=MONGO_DATABASE_NAME)
+client = AsyncIOMotorClient(env.MONGO_URL, uuidRepresentation="standard")
+engine = AIOEngine(motor_client=client, database=p.MONGO_DATABASE_NAME)
