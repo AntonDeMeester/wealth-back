@@ -85,17 +85,29 @@ class Balance(BaseModel):
     unscaledValue: int
 
 
+class AccountType(StringedEnum):
+    CHECKING = "CHECKING"
+    SAVINGS = "SAVINGS"
+    INVESTMENT = "INVESTMENT"
+    MORTGAGE = "MORTGAGE"
+    CREDIT_CARD = "CREDIT_CARD"
+    LOAN = "LOAN"
+    PENSION = "PENSION"
+    OTHER = "OTHER"
+    EXTERNAL = "EXTERNAL"
+
+
 class Account(BaseModel):
     accountNumber: str
     balance: float
-    closed: bool
+    closed: bool = False
     credentialsId: str
     currencyDenominatedBalance: Balance
-    financialInstitutionId: str
+    financialInstitutionId: str = ""
     id: str
     name: str
     ownership: float
-    type: str
+    type: AccountType
 
     class Config:
         extra = "ignore"
@@ -178,4 +190,12 @@ class AuthorizationGrantDelegateRequest(BaseModel):
 
 
 class AuthorizationGrantDelegateResponse(BaseModel):
+    code: str
+
+
+class TinkLinkRedirectResponse(BaseModel):
+    url: str
+
+
+class TinkLinkCallbackRequest(BaseModel):
     code: str

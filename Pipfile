@@ -25,6 +25,7 @@ fastapi-jwt-auth = "*"
 bcrypt = "*"
 httpx = "*"
 pymongo = {extras = ["srv"], version = "*"}
+python-dateutil = "*"
 
 [requires]
 python_version = "3.9"

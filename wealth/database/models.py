@@ -13,12 +13,24 @@ class WealthItem(EmbeddedModel):
     date: str
     amount: float
     account_id: str
+    currency: str
+    raw: str = ""
 
 
 # pylint: disable=abstract-method
 class Account(EmbeddedModel):
     source: AccountSource
     external_id: str
+    account_number: str
+    currency: str
+    type: str
+    bank: str = ""
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+
+        return self.external_id == other.external_id and self.source == other.source
 
 
 # pylint: disable=abstract-method

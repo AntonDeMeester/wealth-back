@@ -1,10 +1,10 @@
 import asyncio
 from datetime import date, timedelta
-from typing import List, cast
+from typing import List, Optional
 
 from wealth.database.api import engine
 from wealth.database.models import Account, AccountSource, User, WealthItem
-from wealth.integrations.tink.api import TinkLinkApi
+from wealth.integrations.tink.api import TinkApi, TinkLinkApi, TinkServerApi
 
 from .api import TinkApi, TinkServerApi
 from .types import QueryRequest, Resolution, StatisticsRequest, StatisticType
@@ -19,25 +19,51 @@ class TinkLogic:
     """
 
     def __init__(self):
-        self.api = TinkApi()
-        self.server = TinkServerApi()
+        self._api: Optional[TinkApi] = None
+        self._server: Optional[TinkServerApi] = None
         self.tink_link = TinkLinkApi()
 
+    @property
+    def api(self) -> TinkApi:
+        if self._api is None:
+            raise ValueError("This api needs to be initiated. Please use an async context manager.")
+        return self._api
+
+    @api.setter
+    def api(self, api: Optional[TinkApi]):
+        self._api = api
+
+    @property
+    def server(self) -> TinkServerApi:
+        if self._server is None:
+            raise ValueError("This api needs to be initiated. Please use an async context manager.")
+        return self._server
+
+    @server.setter
+    def server(self, server: Optional[TinkServerApi]):
+        self._server = server
+
     async def __aenter__(self):
+        self.api = TinkApi()
+        self.api.initialise()
+        self.server = TinkServerApi()
+        self.server.initialise()
         return self
 
     async def __aexit__(self, *excinfo):
         await self.close()
+        self.api = None
+        self.server = None
 
     async def close(self):
         closing = [self.api.close(), self.server.close()]
         await asyncio.gather(*closing)
 
-    def initialise_tink_api(self, code: str):
+    async def initialise_tink_api(self, code: str):
         """
         Initializes the Tink API with the code from Tink Link
         """
-        self.api.initialise_code(code)
+        await self.api.initialise_code(code)
 
     async def get_user_balances(self, user_id: str) -> List[WealthItem]:
         """
@@ -51,28 +77,56 @@ class TinkLogic:
             types=[StatisticType.balance_by_account],
         )
         response = await self.api.get_statistics(request)
-        return [WealthItem(date=item.period, amount=item.value, account_id=user_id) for item in response]
+        return [
+            WealthItem(
+                date=str(item.period),
+                amount=item.value,
+                account_id=user_id,
+                currency="EUR",
+                raw=item.json(),
+            )
+            for item in response
+        ]
 
-    async def get_account_balances(self, account_id: str) -> List[WealthItem]:
+    async def get_account_balances(self, account: Account) -> List[WealthItem]:
         """
         Queries the account balances per day for the specific account
         Returns them, parsed into the internal models
         """
         request = StatisticsRequest(
-            description=account_id,
+            description=account.external_id,
             periods=[f"{ date.today() - timedelta(days=i):%Y-%m-%d}" for i in range(365 * 3)],
             resolution=Resolution.daily,
             types=[StatisticType.balance_by_account],
         )
         response = await self.api.get_statistics(request)
-        return [WealthItem(date=str(item.period), amount=item.value, account_id=account_id) for item in response]
+        return [
+            WealthItem(
+                date=str(item.period),
+                amount=item.value,
+                account_id=account.external_id,
+                currency=account.currency,
+                raw=item.json(),
+            )
+            for item in response
+        ]
 
     async def get_accounts(self) -> List[Account]:
         """
         Queries the accounts from tink and returns them
         """
         response = await self.api.get_accounts()
-        return [Account(source=AccountSource.tink, external_id=item.id) for item in response.accounts]
+        return [
+            Account(
+                source=AccountSource.tink,
+                external_id=item.id,
+                currency=item.currencyDenominatedBalance.currencyCode,
+                account_number=item.accountNumber,
+                bank=item.financialInstitutionId,
+                type=item.type,
+            )
+            for item in response.accounts
+        ]
 
     async def get_user_id(self) -> str:
         """
@@ -117,9 +171,9 @@ class TinkLogic:
         return self.tink_link.get_refresh_credentials_link(auth_code, credentials_id)
 
 
-async def update_account(tink: TinkLogic, account_id: str) -> List[WealthItem]:
-    await tink.generate_transactions(account_id)
-    return await tink.get_account_balances(account_id)
+async def update_account(tink: TinkLogic, account: Account) -> List[WealthItem]:
+    await tink.generate_transactions(account.external_id)
+    return await tink.get_account_balances(account)
 
 
 async def execute_callback(code: str, user: User):
@@ -129,17 +183,15 @@ async def execute_callback(code: str, user: User):
     This will be saved in the database
     """
     async with TinkLogic() as tink:
-        tink.initialise_tink_api(code)
-        if not user.tink_user_id:
-            user.tink_user_id = await tink.get_user_id()
-        if not user.accounts:
-            user.accounts = await tink.get_accounts()
+        await tink.initialise_tink_api(code)
+        user.tink_user_id = await tink.get_user_id()
+        new_accounts = await tink.get_accounts()
+        # Add new accounts, and remove stale account information
+        user.accounts = new_accounts + [account for account in user.accounts if account not in new_accounts]
 
         balances: List[WealthItem] = user.balances
-        new_balances_list = cast(
-            List[List[WealthItem]], await asyncio.gather(update_account(tink, account.external_id) for account in user.accounts)
-        )
-        for account, new_balances in zip(user.accounts, new_balances_list):
+        new_balances_list = await asyncio.gather(*[update_account(tink, account) for account in new_accounts])
+        for account, new_balances in zip(new_accounts, new_balances_list):
             balances = [balance for balance in balances if balance.account_id != account.external_id] + new_balances
         user.balances = balances
 

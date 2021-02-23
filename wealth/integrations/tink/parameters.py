@@ -33,4 +33,4 @@ SCOPE_AUTHORIZATION_GRANT = "authorization:grant"
 SCOPE_TRANSACTIONS = "transactions:read"
 
 TINK_LINK_CLIENT_ID = "df05e4b379934cd09963197cc855bfe9"
-TINK_LINK_REDIRECT_URI = "localhost:3000/callback"
+TINK_LINK_REDIRECT_URI = "http://localhost:3000/callback"

@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 
 import httpx
 
+from wealth.database.models import User
 from wealth.integrations.tink.types import (
     AccountListResponse,
     AuthorizationGrantDelegateRequest,
@@ -43,11 +44,14 @@ class TinkServerApi:
         self.client: Optional[httpx.AsyncClient] = None
 
     async def __aenter__(self):
-        self.client = httpx.AsyncClient()
+        self.initialise()
         return self
 
     async def __aexit__(self, *excinfo):
         await self.close()
+
+    def initialise(self):
+        self.client = httpx.AsyncClient()
 
     async def close(self):
         await self.client.aclose()
@@ -132,34 +136,40 @@ class TinkApi:
         self._refresh_token: Optional[str] = None
         self.client: Optional[httpx.AsyncClient] = None
 
-    async def __aenter__(self):
-        self.client = httpx.AsyncClient()
+    def __aenter__(self):
+        self.initialise()
         return self
 
     async def __aexit__(self, *excinfo):
         await self.close()
 
+    def initialise(self):
+        self.client = httpx.AsyncClient()
+
     async def close(self):
         await self.client.aclose()
         self.client = None
 
-    def initialise_code(self, code: str):
+    async def initialise_code(self, code: str):
         """Sets the Tink Link code to use for access"""
         self._code = code
+        await self._authenticate()
 
     async def _tink_http_request(self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None) -> Dict:
         if self.client is None:
             raise TinkException("Client is not initialized. Please use am async context manager with the TinkApi")
-        if self._refresh_token_expired():
+        if await self._refresh_token_expired():
             raise TinkException("Refresh token expired")
-        if self._auth_token_expired():
-            self._authenticate()
+        if await self._auth_token_expired():
+            await self._authenticate()
 
         url = p.TINK_BASE_URL + endpoint
         headers = {"Authorization": f"Bearer {self._auth_token}"}
+        print(f"Making {method} request to {url}")
         response = await self.client.request(method, url, json=data, headers=headers)
         if response.is_error:
             raise TinkApiException(response.text)
+        print(f"Received response from Tink: {response.json()}")
         return response.json()
 
     async def _tink_post_request(self, *args, **kwargs) -> Dict:
@@ -174,6 +184,7 @@ class TinkApi:
         if self.client is None:
             raise TinkException("Client is not initialized. Please use am async context manager with the TinkApi")
         url = p.TINK_BASE_URL + p.ENDPOINT_TOKEN
+        print(f"Making Token request to {url}")
         response = await self.client.post(url, data=data.dict())
         if response.is_error:
             raise TinkApiException(response.text)
@@ -264,8 +275,10 @@ class TinkApi:
 class TinkLinkApi:
     # pylint: disable=no-self-use
     def _format_link(self, endpoint: str, query_params: TinkLinkQueryParameters) -> str:
-        url = f"{p.TINK_LINK_BASE_URL, endpoint}"
-        return f"{url}?{urlencode(query_params.dict())}"
+        url = f"{p.TINK_LINK_BASE_URL}{endpoint}"
+        non_empty_params = query_params.dict(exclude_none=True)
+        non_empty_params["test"] = "true"
+        return f"{url}?{urlencode(non_empty_params)}"
 
     def get_add_credentials_link(self, authorization_code: str) -> str:
         """
@@ -274,7 +287,7 @@ class TinkLinkApi:
         """
         params = TinkLinkQueryParameters(
             authorization_code=authorization_code,
-            scope="".join(p.AUTHORIZATION_SCOPES),
+            scope=",".join(p.AUTHORIZATION_SCOPES),
         )
         return self._format_link(p.ENDPOINT_TINK_LINK_CREDENTIALS_ADD, params)
 
@@ -301,3 +314,12 @@ class TinkLinkApi:
             credentials_id=credentials_id,
         )
         return self._format_link(p.ENDPOINT_TINK_LINK_CREDENTIALS_AUTHENTICATE, params)
+
+    def get_authorize_link(self, user: User) -> str:
+        """
+        Formats an Authorize Link for Tink Link
+        This is a one-time link to get the balances
+        Returns the link
+        """
+        params = TinkLinkQueryParameters(market=user.market, locale=user.locale, scope=",".join(p.AUTHORIZATION_SCOPES))
+        return self._format_link(p.ENDPOINT_TINK_LINK_AUTHORIZE, params)
