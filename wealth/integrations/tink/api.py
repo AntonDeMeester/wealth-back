@@ -168,8 +168,8 @@ class TinkApi:
         print(f"Making {method} request to {url}")
         response = await self.client.request(method, url, json=data, headers=headers)
         if response.is_error:
+            print(response.text)
             raise TinkApiException(response.text)
-        print(f"Received response from Tink: {response.json()}")
         return response.json()
 
     async def _tink_post_request(self, *args, **kwargs) -> Dict:
@@ -277,7 +277,7 @@ class TinkLinkApi:
     def _format_link(self, endpoint: str, query_params: TinkLinkQueryParameters) -> str:
         url = f"{p.TINK_LINK_BASE_URL}{endpoint}"
         non_empty_params = query_params.dict(exclude_none=True)
-        non_empty_params["test"] = "true"
+        # non_empty_params["test"] = "true"
         return f"{url}?{urlencode(non_empty_params)}"
 
     def get_add_credentials_link(self, authorization_code: str) -> str:

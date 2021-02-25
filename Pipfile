@@ -26,6 +26,7 @@ bcrypt = "*"
 httpx = "*"
 pymongo = {extras = ["srv"], version = "*"}
 python-dateutil = "*"
+nest-asyncio = "*"
 
 [requires]
 python_version = "3.9"
