@@ -27,9 +27,9 @@ class ExchangeRateApi:
 
     def parse_raw_rates(self, raw_rates: HistoryResponse) -> list[ExchangeRate]:
         new_rates: dict[Currency, list[ExchangeRateItem]] = defaultdict(list)
-        for date, value in raw_rates.rates.items():
+        for currency_date, value in raw_rates.rates.items():
             for currency, rate in value.items():
-                new_rates[currency].append(ExchangeRateItem(date=date, rate=rate))
+                new_rates[currency].append(ExchangeRateItem(date=currency_date, rate=rate))
         parsed_rates = [ExchangeRate(currency=currency, rates=rates) for currency, rates in new_rates.items()]
         return parsed_rates
 
@@ -43,9 +43,13 @@ class ExchangeRateApi:
         return old_rates
 
     async def update_exchange_rates(self) -> list[ExchangeRate]:
-        raw_rates = self.get_raw_exchange_rates()
-        new_rates = self.parse_raw_rates(raw_rates)
         old_rates = await engine.find(ExchangeRate)
+        new_rates = self.get_exchange_rates_from_api()
         updated_rates = self.merge_exchange_rates(old_rates, new_rates)
         await engine.save_all(updated_rates)
         return updated_rates
+
+    def get_exchange_rates_from_api(self) -> list[ExchangeRate]:
+        raw_rates = self.get_raw_exchange_rates()
+        rates = self.parse_raw_rates(raw_rates)
+        return rates

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from wealth.core.authentication import WealthJwt
-from wealth.database.models import WealthItem
+from wealth.authentication import WealthJwt
+
+from .types import WealthItem
 
 router = APIRouter()
 
@@ -9,4 +10,4 @@ router = APIRouter()
 @router.get("/balances", response_model=list[WealthItem])
 async def get_balances(authorize: WealthJwt = Depends()):
     user = await authorize.get_jwt_user()
-    return user.balances
+    return [WealthItem.parse_obj(b) for b in user.balances]

@@ -1,15 +1,9 @@
-from enum import Enum
-from typing import Dict, List
+from typing import List
 
 from odmantic import EmbeddedModel, Model
-from pydantic import validator
 
-from wealth import integrations
 from wealth.parameters.constants import Currency
-
-
-class AccountSource(str, Enum):
-    tink = "tink"
+from wealth.parameters.general import AccountSource
 
 
 # pylint: disable=abstract-method
@@ -17,25 +11,8 @@ class WealthItem(EmbeddedModel):
     date: str
     amount: float
     account_id: str
-    currency: str
+    currency: Currency
     raw: str = ""
-
-    def amount_in_euro(self) -> float:
-        from wealth.integrations.exchangeratesapi.dependency import ExchangeRateDependency
-
-        rates = ExchangeRateDependency()
-        exchange_rate = rates.rates[self.currency][self.date]
-        return self.amount / exchange_rate
-
-    # Overwriting super does not work for some reason
-    # However, renaming it suddenly works
-    # https://bugs.python.org/issue29270
-    super_bypass = super
-
-    def dict(self, *args, **kwargs) -> Dict:
-        attribs = self.super_bypass(WealthItem, self).dict(*args, **kwargs)
-        attribs["amount_in_euro"] = self.amount_in_euro()
-        return attribs
 
 
 # pylint: disable=abstract-method

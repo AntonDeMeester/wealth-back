@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 
-from wealth.core.authentication.wealth_jwt import WealthJwt
 from wealth.database.api import engine
 from wealth.database.models import User
 
 from .models import CreateUser, LoginUser, Settings, UpdateUser, ViewUser
+from .wealth_jwt import WealthJwt
 
 router = APIRouter()
 

@@ -5,6 +5,8 @@ from typing import List, Optional
 from wealth.database.api import engine
 from wealth.database.models import Account, AccountSource, User, WealthItem
 from wealth.integrations.tink.api import TinkApi, TinkLinkApi, TinkServerApi
+from wealth.parameters.constants import Currency
+from wealth.parameters.general import GeneralParameters
 
 from .api import TinkApi, TinkServerApi
 from .types import QueryRequest, Resolution, StatisticsRequest, StatisticType
@@ -82,7 +84,7 @@ class TinkLogic:
                 date=str(item.period),
                 amount=item.value,
                 account_id=user_id,
-                currency="EUR",
+                currency=Currency("EUR"),
                 raw=item.json(),
             )
             for item in response
@@ -95,7 +97,7 @@ class TinkLogic:
         """
         request = StatisticsRequest(
             description=account.external_id,
-            periods=[f"{ date.today() - timedelta(days=i):%Y-%m-%d}" for i in range(365 * 3)],
+            periods=[f"{ date.today() - timedelta(days=i):{GeneralParameters.DATE_FORMAT}}" for i in range(365 * 3)],
             resolution=Resolution.daily,
             types=[StatisticType.balance_by_account],
         )
@@ -105,7 +107,7 @@ class TinkLogic:
                 date=str(item.period),
                 amount=item.value,
                 account_id=account.external_id,
-                currency=account.currency,
+                currency=Currency(account.currency),
                 raw=item.json(),
             )
             for item in response
