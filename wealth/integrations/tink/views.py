@@ -30,7 +30,7 @@ async def create_user(authorize: WealthJwt = Depends()) -> str:
 
 
 @router.get("/link")
-async def get_tink_link(authorize: WealthJwt = Depends()) -> TinkLinkRedirectResponse:
-    user = await authorize.get_jwt_user()
+async def get_tink_link(market: str = "SE", test: str = "false", authorize: WealthJwt = Depends()) -> TinkLinkRedirectResponse:
+    await authorize.get_jwt_user()
     tink_link = TinkLinkApi()
-    return TinkLinkRedirectResponse(url=tink_link.get_authorize_link(user))
+    return TinkLinkRedirectResponse(url=tink_link.get_authorize_link(market=market, test=test))

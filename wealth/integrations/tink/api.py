@@ -4,7 +4,6 @@ from urllib.parse import urlencode
 
 import httpx
 
-from wealth.database.models import User
 from wealth.integrations.tink.types import (
     AccountListResponse,
     AuthorizationGrantDelegateRequest,
@@ -315,11 +314,11 @@ class TinkLinkApi:
         )
         return self._format_link(p.ENDPOINT_TINK_LINK_CREDENTIALS_AUTHENTICATE, params)
 
-    def get_authorize_link(self, user: User) -> str:
+    def get_authorize_link(self, market: str, locale: str = "en_UK", test: str = "false") -> str:
         """
         Formats an Authorize Link for Tink Link
         This is a one-time link to get the balances
         Returns the link
         """
-        params = TinkLinkQueryParameters(market=user.market, locale=user.locale, scope=",".join(p.AUTHORIZATION_SCOPES))
+        params = TinkLinkQueryParameters(market=market, locale=locale, scope=",".join(p.AUTHORIZATION_SCOPES), test=test)
         return self._format_link(p.ENDPOINT_TINK_LINK_AUTHORIZE, params)

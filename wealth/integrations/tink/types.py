@@ -16,6 +16,7 @@ class TinkLinkQueryParameters(BaseModel):
     locale: Optional[str]
     authorization_code: Optional[str]
     credentials_id: Optional[str]
+    test: Optional[str]
 
 
 class GrantType(StringedEnum):
