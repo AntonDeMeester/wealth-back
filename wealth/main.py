@@ -19,7 +19,7 @@ origins = [
     "http://127.0.0.1",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:8100",
-    "https://poker-react-front.herokuapp.com",
+    "https://web.illuminatus.be",
 ]
 
 
