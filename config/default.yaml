@@ -5,5 +5,5 @@ infra:
         user_name: wealth_server
     lambda:
         env:
-
 region: eu-west-1
+cors: []

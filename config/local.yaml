@@ -1,0 +1,11 @@
+infra:
+  vpc_name: wealth-staging
+cors:
+  - http://localhost
+  - http://localhost:3000
+  - http://localhost:8100
+  - http://127.0.0.1
+  - http://127.0.0.1:3000
+  - http://127.0.0.1:8100
+frontend:
+  url: "http://localhost:3000"

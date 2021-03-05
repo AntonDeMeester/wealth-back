@@ -33,7 +33,7 @@ class EnvironmentMeta(type):
 
 
 class Environment(metaclass=EnvironmentMeta):
-    ENVIRONMENT: str
+    ENV: str
     APP_SECRET: str
     MONGO_URL: str
 

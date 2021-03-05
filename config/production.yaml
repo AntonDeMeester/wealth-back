@@ -1,0 +1,6 @@
+infra:
+  vpc_name: wealth-staging
+cors:
+  - https://web.illuminatus.be
+frontend:
+  url: "https://web.illuminatus.be"
