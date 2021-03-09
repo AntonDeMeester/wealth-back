@@ -18,4 +18,4 @@ class WealthItem(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         date_obj = date_parser.parse(self.date).date()
-        self.amount_in_euro = rates.convert_to_euros(self.amount, self.currency, date_obj)
+        self.amount_in_euro = rates.convert_to_euros_on_date(self.amount, self.currency, date_obj)

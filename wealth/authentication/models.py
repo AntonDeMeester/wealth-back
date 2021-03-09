@@ -22,6 +22,7 @@ class ViewUser(BaseModel):
 
 
 class CreateUser(ViewUser):
+    email: str
     password: str
     password2: str
 

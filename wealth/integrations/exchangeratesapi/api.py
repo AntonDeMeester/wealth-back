@@ -1,3 +1,5 @@
+import json
+import logging
 from collections import defaultdict
 from datetime import date
 
@@ -5,17 +7,22 @@ import httpx
 
 from wealth.database.api import engine
 from wealth.database.models import ExchangeRate, ExchangeRateItem
+from wealth.integrations.exchangeratesapi.exceptions import ExchangeRateApiApiException
 from wealth.integrations.exchangeratesapi.parameters import BASE_URL, EARLIEST_DATE, ENDPOINT_HISTORY
 from wealth.integrations.exchangeratesapi.types import HistoryResponse
 from wealth.parameters.constants import Currency
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ExchangeRateApi:
     def _request(self, endpoint: str, query_params: dict) -> dict:
         url = f"{BASE_URL}{endpoint}"
         response = httpx.get(url, params=query_params)
+        LOGGER.debug(f"Sending get request to {url} with query params: {json.dumps(query_params)}")
         if response.is_error:
-            raise ValueError(f"{response.status_code} response from ExchangeRatesApi: {response.text}")
+            raise ExchangeRateApiApiException(response)
+        LOGGER.debug(f"Received {response.status_code} response from Exchange Rate API: {response.text}")
         return response.json()
 
     def get_raw_exchange_rates(self) -> HistoryResponse:

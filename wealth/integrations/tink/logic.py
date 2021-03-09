@@ -1,15 +1,19 @@
 import asyncio
+import logging
 from datetime import date, timedelta
 from typing import List, Optional
 
 from wealth.database.api import engine
 from wealth.database.models import Account, AccountSource, User, WealthItem
 from wealth.integrations.tink.api import TinkApi, TinkLinkApi, TinkServerApi
+from wealth.integrations.tink.exceptions import TinkRuntimeException
 from wealth.parameters.constants import Currency
 from wealth.parameters.general import GeneralParameters
 
 from .api import TinkApi, TinkServerApi
 from .types import QueryRequest, Resolution, StatisticsRequest, StatisticType
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TinkLogic:
@@ -28,7 +32,7 @@ class TinkLogic:
     @property
     def api(self) -> TinkApi:
         if self._api is None:
-            raise ValueError("This api needs to be initiated. Please use an async context manager.")
+            raise TinkRuntimeException("This api needs to be initiated. Please use an async context manager.")
         return self._api
 
     @api.setter
@@ -38,7 +42,7 @@ class TinkLogic:
     @property
     def server(self) -> TinkServerApi:
         if self._server is None:
-            raise ValueError("This api needs to be initiated. Please use an async context manager.")
+            raise TinkRuntimeException("This api needs to be initiated. Please use an async context manager.")
         return self._server
 
     @server.setter
@@ -72,6 +76,7 @@ class TinkLogic:
         Queries the account balances per day for the specific user
         Returns them, parsed into the internal models
         """
+        LOGGER.info(f"Getting Tink user balances of {user_id}")
         request = StatisticsRequest(
             description=user_id,
             periods=[str(i) for i in range(2015, date.today().year + 1)],
@@ -95,6 +100,7 @@ class TinkLogic:
         Queries the account balances per day for the specific account
         Returns them, parsed into the internal models
         """
+        LOGGER.info(f"Getting Tink account balances of {account.external_id}")
         request = StatisticsRequest(
             description=account.external_id,
             periods=[f"{ date.today() - timedelta(days=i):{GeneralParameters.DATE_FORMAT}}" for i in range(365 * 3)],
@@ -117,6 +123,7 @@ class TinkLogic:
         """
         Queries the accounts from tink and returns them
         """
+        LOGGER.info("Getting all Tink accounts")
         response = await self.api.get_accounts()
         return [
             Account(
@@ -142,6 +149,7 @@ class TinkLogic:
         Queries Tink to generate the initial transactions for a specific account
         Does not return the transactions
         """
+        LOGGER.info("Generating Tink transactions")
         request = QueryRequest(
             accounts=[account_id],
         )
@@ -152,6 +160,7 @@ class TinkLogic:
         Does the initial backend to create a Tink user
         Returns the URL to be used to log in
         """
+        LOGGER.info("Generating link to create a user in Tink")
         user_id = await self.server.create_user(user.market, user.locale)
         client_hint = f"{user.first_name} {user.last_name}"
         auth_code = await self.server.get_authorization_code(user_id, client_hint)
@@ -167,6 +176,7 @@ class TinkLogic:
         Should be followed in the UI
         """
         assert credentials_id in user.tink_credentials, "Credentials not part of the user"
+        LOGGER.info("Generating link to refresh the credentials of the Tink User")
         client_hint = f"{user.first_name} {user.last_name}"
         auth_code = await self.server.get_authorization_code(user.tink_user_id, client_hint)
 
@@ -185,6 +195,7 @@ async def execute_callback(code: str, user: User):
     This will be saved in the database
     """
     async with TinkLogic() as tink:
+        LOGGER.info("Executing callback logic for Tink: Getting accounts, and fetching all balances")
         await tink.initialise_tink_api(code)
         user.tink_user_id = await tink.get_user_id()
         new_accounts = await tink.get_accounts()

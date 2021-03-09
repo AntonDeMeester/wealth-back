@@ -27,6 +27,7 @@ httpx = "*"
 pymongo = {extras = ["srv"], version = "*"}
 python-dateutil = "*"
 nest-asyncio = "*"
+sentry-sdk = "*"
 
 [requires]
 python_version = "3.9"

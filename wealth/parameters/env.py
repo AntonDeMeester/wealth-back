@@ -36,6 +36,8 @@ class Environment(metaclass=EnvironmentMeta):
     ENV: str
     APP_SECRET: str
     MONGO_URL: str
+    LOG_LEVEL: str = "INFO"
+    SENTRY_DSN: str = ""
 
 
 env = Environment()

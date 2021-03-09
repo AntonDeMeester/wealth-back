@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import WebSocket
+from fastapi import Depends, WebSocket
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import JWTDecodeError
 
@@ -48,3 +48,7 @@ class WealthJwt(AuthJWT):
         if not db_user or not check_password(user.password, db_user.password):
             raise JWTDecodeError(status_code=401, message="User and password combination not correct")
         return db_user
+
+
+async def get_authenticated_user(authorize: WealthJwt = Depends()) -> User:
+    return await authorize.get_jwt_user()

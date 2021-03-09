@@ -1,3 +1,5 @@
+import json
+import logging
 from enum import Enum
 from typing import Dict, Optional
 from urllib.parse import urlencode
@@ -22,8 +24,10 @@ from wealth.integrations.tink.types import (
 )
 
 from ..tink import parameters as p
-from .exceptions import TinkApiException, TinkException
+from .exceptions import TinkApiException, TinkConfigurationException, TinkRuntimeException
 from .types import OAuthTokenRequestParameters
+
+LOGGER = logging.getLogger(__name__)
 
 
 class HttpMethod(str, Enum):
@@ -57,22 +61,18 @@ class TinkServerApi:
         self.client = None
 
     # pylint: disable=no-self-use
-    async def _tink_request(
-        self,
-        endpoint: str,
-        data: Dict,
-        headers: Dict = None,
-        is_json=True,
-    ) -> Dict:
+    async def _tink_request(self, endpoint: str, data: Dict, headers: Dict = None, is_json=True) -> Dict:
         if self.client is None:
-            raise TinkException("Client is not initialized. Please use am async context manager with the TinkApi")
+            raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
         url = p.TINK_BASE_URL + endpoint
+        LOGGER.debug(f"Sending post request to {url} with {json.dumps(data)}")
         if is_json:
             response = await self.client.post(url, json=data, headers=headers)
         else:
             response = await self.client.post(url, data=data, headers=headers)
         if response.is_error:
-            raise TinkApiException(response.text)
+            raise TinkApiException(response)
+        LOGGER.debug(f"Received {response.status_code} response from Tink: {response.text}")
         return response.json()
 
     async def _get_client_access_token(self, scope: str) -> TokenResponse:
@@ -154,90 +154,6 @@ class TinkApi:
         self._code = code
         await self._authenticate()
 
-    async def _tink_http_request(self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None) -> Dict:
-        if self.client is None:
-            raise TinkException("Client is not initialized. Please use am async context manager with the TinkApi")
-        if await self._refresh_token_expired():
-            raise TinkException("Refresh token expired")
-        if await self._auth_token_expired():
-            await self._authenticate()
-
-        url = p.TINK_BASE_URL + endpoint
-        headers = {"Authorization": f"Bearer {self._auth_token}"}
-        print(f"Making {method} request to {url}")
-        response = await self.client.request(method, url, json=data, headers=headers)
-        if response.is_error:
-            print(response.text)
-            raise TinkApiException(response.text)
-        return response.json()
-
-    async def _tink_post_request(self, *args, **kwargs) -> Dict:
-        return await self._tink_http_request(HttpMethod.POST, *args, **kwargs)
-
-    async def _tink_get_request(self, *args, **kwargs) -> Dict:
-        return await self._tink_http_request(HttpMethod.GET, *args, **kwargs)
-
-    # pylint: disable=no-self-use
-    async def _tink_auth_request(self, data: OAuthTokenRequestParameters) -> Dict:
-        """Queries the Token endpoint of Tink with the provided request. Returns the response"""
-        if self.client is None:
-            raise TinkException("Client is not initialized. Please use am async context manager with the TinkApi")
-        url = p.TINK_BASE_URL + p.ENDPOINT_TOKEN
-        print(f"Making Token request to {url}")
-        response = await self.client.post(url, data=data.dict())
-        if response.is_error:
-            raise TinkApiException(response.text)
-        return response.json()
-
-    async def _auth_token_expired(self) -> bool:
-        if self._auth_token is None:
-            return True
-        # Add check if expired
-        return False
-
-    async def _refresh_token_expired(self) -> bool:
-        if self._auth_token is None:
-            return False
-        # Add check if expired
-        return False
-
-    async def _authenticate(self):
-        if not self._refresh_token:
-            response = await self._get_initial_token()
-        else:
-            response = await self._refresh_auth_token()
-        self._auth_token = response.access_token
-        self._refresh_token = response.refresh_token
-
-    async def _get_initial_token(self) -> TokenResponse:
-        if p.TINK_CLIENT_ID is None or p.TINK_CLIENT_SECRET is None:
-            raise TinkException("Tink credentials are not configured")
-        if self._code is None:
-            raise TinkException("Authorization code is not set or already used")
-        data = OAuthTokenRequestParameters(
-            code=self._code,
-            client_id=p.TINK_CLIENT_ID,
-            client_secret=p.TINK_CLIENT_SECRET,
-            grant_type=GrantType.authorization_code,
-        )
-        response = await self._tink_auth_request(data)
-        self._code = None
-        return TokenResponse(**response)
-
-    async def _refresh_auth_token(self) -> TokenResponse:
-        if p.TINK_CLIENT_ID is None or p.TINK_CLIENT_SECRET is None:
-            raise TinkException("Tink credentials are not configured")
-        if self._refresh_token is None:
-            raise TinkException("Cannot refresh without a refresh token")
-        data = OAuthTokenRequestParameters(
-            refresh_token=self._refresh_token,
-            client_id=p.TINK_CLIENT_ID,
-            client_secret=p.TINK_CLIENT_SECRET,
-            grant_type=GrantType.refresh_token,
-        )
-        response = await self._tink_auth_request(data)
-        return TokenResponse(**response)
-
     async def get_statistics(self, request: StatisticsRequest) -> StatisticsResponse:
         """
         Queries Statistics from Tink.
@@ -270,13 +186,98 @@ class TinkApi:
         response = await self._tink_post_request(p.ENDPOINT_QUERY, data=request.dict())
         return QueryResponse.parse_obj(response)
 
+    async def _tink_post_request(self, *args, **kwargs) -> Dict:
+        return await self._tink_http_request(HttpMethod.POST, *args, **kwargs)
+
+    async def _tink_get_request(self, *args, **kwargs) -> Dict:
+        return await self._tink_http_request(HttpMethod.GET, *args, **kwargs)
+
+    async def _tink_http_request(self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None) -> Dict:
+        if self.client is None:
+            raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
+        if await self._refresh_token_expired():
+            raise TinkRuntimeException("Refresh token expired")
+        if await self._auth_token_expired():
+            await self._authenticate()
+
+        url = p.TINK_BASE_URL + endpoint
+        headers = {"Authorization": f"Bearer {self._auth_token}"}
+        LOGGER.debug(f"Sending {method} request to {url} with {json.dumps(data)}")
+        response = await self.client.request(method, url, json=data, headers=headers)
+        if response.is_error:
+            raise TinkApiException(response)
+        LOGGER.debug(f"Received {response.status_code} response from Tink: {response.text}")
+        return response.json()
+
+    # pylint: disable=no-self-use
+    async def _tink_auth_request(self, data: OAuthTokenRequestParameters) -> Dict:
+        """Queries the Token endpoint of Tink with the provided request. Returns the response"""
+        if self.client is None:
+            raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
+        url = p.TINK_BASE_URL + p.ENDPOINT_TOKEN
+        data_dict = data.dict()
+        LOGGER.debug(f"Sending auth request for the TinkClientAPI with {json.dumps(data_dict)}")
+        response = await self.client.post(url, data=data_dict)
+        if response.is_error:
+            raise TinkApiException(response)
+        LOGGER.debug(f"Received {response.status_code} response from Tink: {response.text}")
+        return response.json()
+
+    async def _auth_token_expired(self) -> bool:
+        if self._auth_token is None:
+            return True
+        # TODO: Add check if expired
+        return False
+
+    async def _refresh_token_expired(self) -> bool:
+        if self._auth_token is None:
+            return False
+        # TODO: Add check if expired
+        return False
+
+    async def _authenticate(self):
+        if not self._refresh_token:
+            response = await self._get_initial_token()
+        else:
+            response = await self._refresh_auth_token()
+        self._auth_token = response.access_token
+        self._refresh_token = response.refresh_token
+
+    async def _get_initial_token(self) -> TokenResponse:
+        if p.TINK_CLIENT_ID is None or p.TINK_CLIENT_SECRET is None:
+            raise TinkConfigurationException("Tink credentials are not configured")
+        if self._code is None:
+            raise TinkRuntimeException("Authorization code is not set or already used")
+        data = OAuthTokenRequestParameters(
+            code=self._code,
+            client_id=p.TINK_CLIENT_ID,
+            client_secret=p.TINK_CLIENT_SECRET,
+            grant_type=GrantType.authorization_code,
+        )
+        response = await self._tink_auth_request(data)
+        self._code = None
+        return TokenResponse(**response)
+
+    async def _refresh_auth_token(self) -> TokenResponse:
+        if p.TINK_CLIENT_ID is None or p.TINK_CLIENT_SECRET is None:
+            raise TinkConfigurationException("Tink credentials are not configured")
+        if self._refresh_token is None:
+            raise TinkRuntimeException("Cannot refresh without a refresh token")
+        data = OAuthTokenRequestParameters(
+            refresh_token=self._refresh_token,
+            client_id=p.TINK_CLIENT_ID,
+            client_secret=p.TINK_CLIENT_SECRET,
+            grant_type=GrantType.refresh_token,
+        )
+        response = await self._tink_auth_request(data)
+        return TokenResponse(**response)
+
 
 class TinkLinkApi:
     # pylint: disable=no-self-use
     def _format_link(self, endpoint: str, query_params: TinkLinkQueryParameters) -> str:
         url = f"{p.TINK_LINK_BASE_URL}{endpoint}"
         non_empty_params = query_params.dict(exclude_none=True)
-        # non_empty_params["test"] = "true"
         return f"{url}?{urlencode(non_empty_params)}"
 
     def get_add_credentials_link(self, authorization_code: str) -> str:
