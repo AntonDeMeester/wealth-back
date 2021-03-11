@@ -9,7 +9,7 @@ from fastapi_jwt_auth.exceptions import AuthJWTException
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from .logging import set_up_logging
-from .parameters import Environment
+from .parameters import env
 from .routers import router
 
 set_up_logging()
@@ -24,8 +24,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-if Environment.SENTRY_DSN:
-    sentry_sdk.init(dsn=Environment.SENTRY_DSN)
+if env.SENTRY_DSN:
+    sentry_sdk.init(dsn=env.SENTRY_DSN)
     app.add_middleware(SentryAsgiMiddleware)
 
 

@@ -24,12 +24,12 @@ class EnvironmentMeta(type):
     def __new__(
         cls: Type["EnvironmentMeta"], name: str, bases: Tuple[type, ...], namespace: Dict[str, Any]
     ) -> "EnvironmentMeta":
-        obj = super().__new__(cls, name, bases, namespace)  # type: ignore
+        meta_obj = super().__new__(cls, name, bases, namespace)  # type: ignore
         for key, value in namespace["__annotations__"].items():
-            default = namespace.get("key")
+            default = namespace.get(key)
             if is_env_variable(key, value, default):
-                setattr(cls, key, environ.get(key, default))
-        return cast("EnvironmentMeta", obj)
+                setattr(meta_obj, key, environ.get(key, default))
+        return cast("EnvironmentMeta", meta_obj)
 
 
 class Environment(metaclass=EnvironmentMeta):

@@ -1,2 +1,2 @@
-from .env import Environment
+from ._environment import env
 from .general import GeneralParameters

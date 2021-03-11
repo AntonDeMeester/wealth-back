@@ -5,7 +5,7 @@ from pydantic import BaseModel, ValidationError, root_validator, validator
 
 from wealth.database.api import engine
 from wealth.database.models import User
-from wealth.parameters import Environment as env
+from wealth.parameters import env
 
 from .passwords import encode_password, validate_password
 
