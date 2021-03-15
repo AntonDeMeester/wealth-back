@@ -1,18 +1,20 @@
+PYTHON_FOLDERS := wealth tests
+
 check:
-	mypy wealth
-	pylint wealth --fail-under 9
-	radon cc wealth -a -nc
+	mypy ${PYTHON_FOLDERS}
+	pylint  ${PYTHON_FOLDERS} --fail-under 9
+	radon cc  ${PYTHON_FOLDERS} -a -nc
 
 reformat:
-	isort wealth
-	black wealth
+	isort  ${PYTHON_FOLDERS}
+	black  ${PYTHON_FOLDERS}
 
 check-reformat:
-	isort --check-only wealth tests
-	black --check wealth tests
+	isort --check-only  ${PYTHON_FOLDERS}
+	black --check  ${PYTHON_FOLDERS}
 
 test:
-	pytest --cov=myproj --cov-report --cov-report html:coverage\/cov_html term tests
+	pytest --cov=wealth --cov-report term --cov-report html:coverage\/cov_html tests
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 

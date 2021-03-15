@@ -12,19 +12,22 @@ from .passwords import check_password
 
 
 class WealthJwt(AuthJWT):
-    async def get_jwt_user(self) -> User:
+    async def get_jwt_user(self) -> Optional[User]:
         user_id = self.get_jwt_subject()
+        if user_id is None:
+            return None
         user = await engine.find_one(User, User.email == user_id)
+        return user
+
+    async def get_authenticated_jwt_user(self) -> User:
+        self.jwt_required()
+        user = await self.get_jwt_user()
         if user is None:
             raise JWTDecodeError(
                 status_code=401,
                 message=f"User in header {self._header_name} is not a valid user",
             )
         return user
-
-    async def jwt_required_and_get_user(self) -> User:
-        self.jwt_required()
-        return await self.get_jwt_user()
 
     def jwt_forbidden(
         self,
@@ -34,7 +37,7 @@ class WealthJwt(AuthJWT):
         csrf_token: Optional[str] = None,
     ):
         """
-        Checks that there is not JWT
+        Checks that there is no JWT
         """
         self.jwt_optional(auth_from, token, websocket, csrf_token)
         if self.get_jwt_subject() is not None:
@@ -51,4 +54,4 @@ class WealthJwt(AuthJWT):
 
 
 async def get_authenticated_user(authorize: WealthJwt = Depends()) -> User:
-    return await authorize.get_jwt_user()
+    return await authorize.get_authenticated_jwt_user()

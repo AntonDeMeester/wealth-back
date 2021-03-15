@@ -6,3 +6,6 @@ profile="black"
 src_paths=["wealth", "tests"]
 multi_line_output=3
 line_length=128
+
+[tool.pytest.ini_options]
+testpaths = [ "test" ]

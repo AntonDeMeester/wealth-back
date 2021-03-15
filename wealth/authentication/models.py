@@ -35,7 +35,8 @@ class CreateUser(ViewUser):
         if errors:
             raise HTTPException(status_code=422, detail=errors)
 
-    async def validate_email(self, email):
+    @classmethod
+    async def validate_email(cls, email):
         user = await engine.find_one(User, User.email == email)
         if user is not None:
             raise ValueError("Email already registered")

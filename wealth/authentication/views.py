@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
 
+from wealth.authentication import get_authenticated_user
 from wealth.database.api import engine
 from wealth.database.models import User
 
-from .models import CreateUser, LoginUser, Settings, UpdateUser, ViewUser
+from .models import CreateUser, LoginUser, Settings, ViewUser
 from .wealth_jwt import WealthJwt
 
 router = APIRouter()
@@ -40,17 +41,14 @@ def refresh(authorize: WealthJwt = Depends()):
 
 
 @router.get("/user", response_model=ViewUser)
-def get_user(authorize: WealthJwt = Depends()):
-    authorize.jwt_required()
-
-    current_user = authorize.get_jwt_user()
+async def get_user(current_user: User = Depends(get_authenticated_user)):
     return ViewUser.parse_obj(current_user)
 
 
 @router.post("/user", response_model=ViewUser)
 async def create_user(user: CreateUser, authorize: WealthJwt = Depends()):
-    await user.async_validate()
     authorize.jwt_forbidden()
+    await user.async_validate()
 
     db_user = User.parse_obj(user.dict())
     db_user = await engine.save(db_user)
@@ -58,16 +56,16 @@ async def create_user(user: CreateUser, authorize: WealthJwt = Depends()):
     return return_user
 
 
-@router.put("/user", response_model=ViewUser)
-async def update_user(user: UpdateUser, authorize: WealthJwt = Depends()):
-    authorize.fresh_jwt_required()
+# @router.put("/user", response_model=ViewUser)
+# async def update_user(user: UpdateUser, authorize: WealthJwt = Depends()):
+#     authorize.fresh_jwt_required()
 
-    current_user = await authorize.get_jwt_user()
-    current_user.copy(update=user.dict())
-    current_user = await engine.save(current_user)
+#     current_user = await authorize.get_jwt_user()
+#     current_user.copy(update=user.dict())
+#     current_user = await engine.save(current_user)
 
-    return_user = ViewUser.parse_obj(current_user.dict())
-    return return_user
+#     return_user = ViewUser.parse_obj(current_user.dict())
+#     return return_user
 
 
 # Password reset

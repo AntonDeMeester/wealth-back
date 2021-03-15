@@ -13,6 +13,8 @@ pytest-cov = "*"
 bpython = "*"
 radon = "*"
 pre-commit = "*"
+pymongo-inmemory = "*"
+pytest-asyncio = "*"
 
 [packages]
 fastapi = "*"

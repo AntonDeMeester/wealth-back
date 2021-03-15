@@ -20,11 +20,11 @@ async def get_accounts(user: User = Depends(get_authenticated_user)):
 
 @router.get("/accounts/{account_id}", response_model=Account)
 async def get_account(account_id: str, user: User = Depends(get_authenticated_user)):
-    account = [a.external_id == account_id for a in user.accounts]
+    account = [a for a in user.accounts if a.external_id == account_id]
     return account[0] if account else None
 
 
 @router.get("/accounts/{account_id}/balances", response_model=list[WealthItem])
 async def get_account_balances(account_id: str, user: User = Depends(get_authenticated_user)):
-    balances = [b.account_id == account_id for b in user.balances]
+    balances = [b for b in user.balances if b.account_id == account_id]
     return [WealthItem.parse_obj(b) for b in balances]
