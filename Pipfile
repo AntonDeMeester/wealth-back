@@ -15,6 +15,7 @@ radon = "*"
 pre-commit = "*"
 pymongo-inmemory = "*"
 pytest-asyncio = "*"
+pytest-httpx = "*"
 
 [packages]
 fastapi = "*"

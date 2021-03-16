@@ -9,7 +9,7 @@ from wealth.main import app
 from wealth.parameters import GeneralParameters as p
 
 
-@pytest.fixture()
+@pytest.fixture
 def local_database(event_loop):
     with patch.object(AsyncIOMotorClient, "__delegate_class__", new=MongoClient):
         client = AsyncIOMotorClient(io_loop=event_loop, uuidRepresentation="standard")
@@ -19,7 +19,7 @@ def local_database(event_loop):
                 yield new_engine
 
 
-@pytest.fixture()
+@pytest.fixture
 def app_fixture():
     local_app = app
     yield local_app

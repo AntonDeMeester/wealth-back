@@ -6,7 +6,6 @@ from fastapi import FastAPI
 
 from tests.banking.factory import generate_wealth_item
 from tests.database.factory import generate_account, generate_user
-from tests.fixtures import app_fixture  # pylint: disable=unused-import
 from wealth.authentication import get_authenticated_user
 from wealth.banking.types import WealthItem
 from wealth.integrations.exchangeratesapi.dependency import Exchanger
@@ -24,7 +23,6 @@ class TestWealthItem:
 
 class TestBankingViews:
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name
     async def test_get_balances(self, app_fixture: FastAPI):
         number_of_balances = 5
         balances = [generate_wealth_item() for _ in range(number_of_balances)]
@@ -41,7 +39,6 @@ class TestBankingViews:
         assert "amount_in_euro" in data[0]
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name
     async def test_get_balances_not_auth(self, app_fixture: FastAPI):
         async with httpx.AsyncClient(app=app_fixture, base_url="http://test") as client:
             response = await client.get("/banking/balances")
@@ -49,7 +46,6 @@ class TestBankingViews:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name
     async def test_get_accounts(self, app_fixture: FastAPI):
         number_of_accounts = 5
         accounts = [generate_account() for _ in range(number_of_accounts)]
@@ -65,7 +61,6 @@ class TestBankingViews:
         assert data == [acc.doc() for acc in accounts]
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name
     async def test_get_accounts_not_auth(self, app_fixture: FastAPI):
         async with httpx.AsyncClient(app=app_fixture, base_url="http://test") as client:
             response = await client.get("/banking/accounts")
@@ -73,7 +68,6 @@ class TestBankingViews:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name
     async def test_get_account(self, app_fixture: FastAPI):
         external_id = "hello-world"
         one_account = generate_account(external_id=external_id)
@@ -91,7 +85,6 @@ class TestBankingViews:
         assert data == one_account.doc()
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name
     async def test_get_account_not_auth(self, app_fixture: FastAPI):
         external_id = "hello-world"
 
@@ -101,7 +94,6 @@ class TestBankingViews:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name
     async def test_get_account_balances(self, app_fixture: FastAPI):
         account_id = "hello-world"
         number_of_account_balances = 7
@@ -120,7 +112,6 @@ class TestBankingViews:
         assert len(data) == number_of_account_balances
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name
     async def test_get_account_balances_not_auth(self, app_fixture: FastAPI):
         account_id = "hello-world"
 

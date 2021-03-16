@@ -8,7 +8,6 @@ from odmantic import AIOEngine
 
 from tests.authentication.factory import generate_create_user
 from tests.database.factory import generate_user
-from tests.fixtures import local_database  # pylint: disable=unused-import
 from wealth.authentication.models import CreateUser, LoginUser
 from wealth.authentication.passwords import check_password, encode_password, validate_password
 from wealth.authentication.wealth_jwt import WealthJwt
@@ -37,14 +36,14 @@ class TestModels:
                     assert exc.detail == expected.detail
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_user_async_validate_email_present(self, local_database: AIOEngine):
         not_present_email = "not@present.com"
         validated = await CreateUser.validate_email(not_present_email)
         assert validated == not_present_email
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_user_async_validate_email_not_present(self, local_database: AIOEngine):
         already_present_email = "is@present.com"
 
@@ -108,7 +107,7 @@ class TestPasswords:
 
 class TestAuthViews:
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_login_valid(self, local_database: AIOEngine):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
@@ -124,7 +123,7 @@ class TestAuthViews:
         assert "refresh_token" in response.json()
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_login_user_not_exist(self, local_database: AIOEngine):
         password = "password123"
         data = {"email": "test@test.com", "password": password}
@@ -135,7 +134,7 @@ class TestAuthViews:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_login_user_not_password_wrong(self, local_database: AIOEngine):
         password = "password123"
         wrong_password = "password124"
@@ -150,7 +149,7 @@ class TestAuthViews:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_refresh_valid(self, local_database: AIOEngine):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
@@ -167,7 +166,7 @@ class TestAuthViews:
         assert "access_token" in response.json()
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_refresh_wrong_jwt(self, local_database: AIOEngine):
         async with httpx.AsyncClient(app=app, base_url="http://test") as client:
             auth = "Bearer Somethingwrong"
@@ -176,7 +175,7 @@ class TestAuthViews:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_get_user(self, local_database: AIOEngine):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
@@ -196,7 +195,7 @@ class TestAuthViews:
         assert "password" not in data
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_get_user_no_auth(self, local_database: AIOEngine):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
@@ -209,7 +208,7 @@ class TestAuthViews:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_create_user(self, local_database: AIOEngine):
         data_input = generate_create_user(email="test@test.com", _raw=True)
 
@@ -223,7 +222,7 @@ class TestAuthViews:
 
 class TestWealthJwt:
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_get_jwt_user_present(self, local_database: AIOEngine):
         email = "test@test.com"
         user = generate_user(email=email)
@@ -238,7 +237,7 @@ class TestWealthJwt:
         assert retrieved_user.email == email
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_get_jwt_user_not_present(self, local_database: AIOEngine):
         email = "test@test.com"
 
@@ -250,7 +249,7 @@ class TestWealthJwt:
         assert retrieved_user is None
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_get_jwt_user_no_token(self, local_database: AIOEngine):
         jwt = WealthJwt()
 
@@ -260,7 +259,7 @@ class TestWealthJwt:
         assert retrieved_user is None
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_get_authenticated_jwt_user_valid(self, local_database: AIOEngine):
         user = generate_user()
 
@@ -272,7 +271,7 @@ class TestWealthJwt:
         assert user == retrieved_user
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_get_authenticated_jwt_user_invalid(self, local_database: AIOEngine):
         user = None
 
@@ -284,7 +283,7 @@ class TestWealthJwt:
                 assert exc.status_code == 401  # type: ignore
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_get_authenticated_jwt_user_no_token(self, local_database: AIOEngine):
         jwt = WealthJwt()
 
@@ -309,7 +308,7 @@ class TestWealthJwt:
                 assert exc.status_code == 422
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_login_valid(self, local_database: AIOEngine):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
@@ -323,7 +322,7 @@ class TestWealthJwt:
         assert retrieved_user.email == user.email
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_login_user_not_exist(self, local_database: AIOEngine):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
@@ -336,7 +335,7 @@ class TestWealthJwt:
             assert exc.status_code == 401  # type: ignore
 
     @pytest.mark.asyncio
-    # pylint: disable=redefined-outer-name, unused-argument
+    # pylint: disable=unused-argument
     async def test_login_user_password_wrong(self, local_database: AIOEngine):
         password = "password123"
         wrong_password = "password124"
