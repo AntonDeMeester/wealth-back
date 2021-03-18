@@ -82,7 +82,7 @@ class TinkServerApi:
             grant_type=GrantType.client_credentials,
             scope=scope,
         )
-        response = await self._tink_request(p.ENDPOINT_TOKEN, request.dict(), is_json=False)
+        response = await self._tink_request(p.ENDPOINT_TOKEN, request.dict(exclude_none=True), is_json=False)
         return TokenResponse(**response)
 
     async def _create_user(self, market: str, locale: str, token: str) -> CreateUserResponse:
@@ -94,9 +94,11 @@ class TinkServerApi:
     async def _authorize_tink_link(
         self, user_id: str, user_name: str, scope: str, token: str
     ) -> AuthorizationGrantDelegateResponse:
-        request = AuthorizationGrantDelegateRequest(user_id=user_id, id_hint=user_name, scope=scope)
+        request = AuthorizationGrantDelegateRequest(
+            user_id=user_id, id_hint=user_name, scope=scope, actor_client_id=p.TINK_LINK_CLIENT_ID
+        )
         headers = {"Authorization": f"Bearer {token}"}
-        response = await self._tink_request(p.ENDPOINT_GRANT_DELEGATE, request.dict(), headers=headers)
+        response = await self._tink_request(p.ENDPOINT_GRANT_DELEGATE, request.dict(exclude_none=True), headers=headers)
         return AuthorizationGrantDelegateResponse(**response)
 
     async def create_user(self, market: str, locale: str) -> str:
@@ -117,7 +119,7 @@ class TinkServerApi:
         """
         token_response = await self._get_client_access_token(p.SCOPE_AUTHORIZATION_GRANT)
         token = token_response.access_token
-        scope = "".join(p.AUTHORIZATION_SCOPES)
+        scope = ",".join(p.AUTHORIZATION_SCOPES)
         code_response = await self._authorize_tink_link(user_id, user_name, scope, token)
         return code_response.code
 
@@ -135,7 +137,7 @@ class TinkApi:
         self._refresh_token: Optional[str] = None
         self.client: Optional[httpx.AsyncClient] = None
 
-    def __aenter__(self):
+    async def __aenter__(self):
         self.initialise()
         return self
 
@@ -195,9 +197,9 @@ class TinkApi:
     async def _tink_http_request(self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None) -> Dict:
         if self.client is None:
             raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
-        if await self._refresh_token_expired():
+        if self._refresh_token_expired():
             raise TinkRuntimeException("Refresh token expired")
-        if await self._auth_token_expired():
+        if self._auth_token_expired():
             await self._authenticate()
 
         url = p.TINK_BASE_URL + endpoint
@@ -215,7 +217,7 @@ class TinkApi:
         if self.client is None:
             raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
         url = p.TINK_BASE_URL + p.ENDPOINT_TOKEN
-        data_dict = data.dict()
+        data_dict = data.dict(exclude_none=True)
         LOGGER.debug(f"Sending auth request for the TinkClientAPI with {json.dumps(data_dict)}")
         response = await self.client.post(url, data=data_dict)
         if response.is_error:
@@ -223,13 +225,13 @@ class TinkApi:
         LOGGER.debug(f"Received {response.status_code} response from Tink: {response.text}")
         return response.json()
 
-    async def _auth_token_expired(self) -> bool:
+    def _auth_token_expired(self) -> bool:
         if self._auth_token is None:
             return True
         # TODO: Add check if expired
         return False
 
-    async def _refresh_token_expired(self) -> bool:
+    def _refresh_token_expired(self) -> bool:
         if self._auth_token is None:
             return False
         # TODO: Add check if expired

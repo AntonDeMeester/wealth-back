@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from wealth.util.types import StringedEnum
 
-from .parameters import TINK_CLIENT_ID, TINK_LINK_CLIENT_ID, TINK_LINK_REDIRECT_URI
+from .parameters import TINK_CLIENT_ID, TINK_LINK_REDIRECT_URI
 
 
 class TinkLinkQueryParameters(BaseModel):
@@ -186,7 +186,7 @@ class AuthorizationGrantDelegateRequest(BaseModel):
     user_id: str
     external_user_id: Optional[str]
     id_hint: str
-    actor_client_id: str = TINK_LINK_CLIENT_ID
+    actor_client_id: str
     scope: str
 
 
