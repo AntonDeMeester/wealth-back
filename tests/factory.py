@@ -12,14 +12,14 @@ SpecialCaseDict = dict[str, Callable[[Any], Any]]
 
 class ModelGenerator(Protocol[T]):
     @overload
-    def __call__(self, _raw: Literal[True], **kwargs) -> dict:
+    def __call__(self, *, _raw: Literal[True], **kwargs) -> dict:
         pass
 
     @overload
-    def __call__(self, _raw: Literal[False] = False, **kwargs) -> T:
+    def __call__(self, *, _raw: Literal[False] = False, **kwargs) -> T:
         pass
 
-    def __call__(self, _raw=False, **kwargs) -> Union[T, dict]:
+    def __call__(self, *, _raw=False, **kwargs) -> Union[T, dict]:
         pass
 
 
@@ -29,14 +29,14 @@ def database_model_generator(
     _special_cases = special_cases if special_cases is not None else {}
 
     @overload
-    def _generate_model(_raw: Literal[True], **kwargs) -> dict:
+    def _generate_model(*, _raw: Literal[True], **kwargs) -> dict:
         pass
 
     @overload
-    def _generate_model(_raw: Literal[False] = False, **kwargs) -> D:
+    def _generate_model(*, _raw: Literal[False] = False, **kwargs) -> D:
         pass
 
-    def _generate_model(_raw=False, **kwargs) -> Union[D, dict]:
+    def _generate_model(*, _raw=False, **kwargs) -> Union[D, dict]:
         all_data = defaults | kwargs
         for key, to_be_called in _special_cases.items():
             all_data[key] = to_be_called(all_data[key])
@@ -53,14 +53,14 @@ def pydantic_model_generator(
     _special_cases = special_cases if special_cases is not None else {}
 
     @overload
-    def _generate_model(_raw: Literal[True], **kwargs) -> dict:
+    def _generate_model(*, _raw: Literal[True], **kwargs) -> dict:
         pass
 
     @overload
-    def _generate_model(_raw: Literal[False] = False, **kwargs) -> P:
+    def _generate_model(*, _raw: Literal[False] = False, **kwargs) -> P:
         pass
 
-    def _generate_model(_raw=False, **kwargs) -> Union[P, dict]:
+    def _generate_model(*, _raw=False, **kwargs) -> Union[P, dict]:
         all_data = defaults | kwargs
         for key, to_be_called in _special_cases.items():
             all_data[key] = to_be_called(all_data[key])

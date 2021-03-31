@@ -14,7 +14,7 @@ check-reformat:
 	black --check  ${PYTHON_FOLDERS}
 
 test:
-	pytest --cov=wealth --cov-report term --cov-report html:coverage\/cov_html tests
+	pytest --cov=wealth --cov-report term --cov-report html:coverage\/cov_html  --cov-report xml:coverage\/coverage.xml tests
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 

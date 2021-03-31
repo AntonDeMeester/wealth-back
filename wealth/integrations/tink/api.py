@@ -6,13 +6,18 @@ from urllib.parse import urlencode
 
 import httpx
 
-from wealth.integrations.tink.types import (
+from ..tink import parameters as p
+from .exceptions import TinkApiException, TinkConfigurationException, TinkRuntimeException
+from .types import (
     AccountListResponse,
     AuthorizationGrantDelegateRequest,
     AuthorizationGrantDelegateResponse,
+    AuthorizationGrantRequest,
+    AuthorizationGrantResponse,
     CreateUserRequest,
     CreateUserResponse,
     GrantType,
+    OAuthTokenRequestParameters,
     QueryRequest,
     QueryResponse,
     StatisticsRequest,
@@ -22,10 +27,6 @@ from wealth.integrations.tink.types import (
     TokenResponse,
     UserResponse,
 )
-
-from ..tink import parameters as p
-from .exceptions import TinkApiException, TinkConfigurationException, TinkRuntimeException
-from .types import OAuthTokenRequestParameters
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,8 +78,6 @@ class TinkServerApi:
 
     async def _get_client_access_token(self, scope: str) -> TokenResponse:
         request = OAuthTokenRequestParameters(
-            client_id=p.TINK_CLIENT_ID,
-            client_secret=p.TINK_CLIENT_SECRET,
             grant_type=GrantType.client_credentials,
             scope=scope,
         )
@@ -98,8 +97,16 @@ class TinkServerApi:
             user_id=user_id, id_hint=user_name, scope=scope, actor_client_id=p.TINK_LINK_CLIENT_ID
         )
         headers = {"Authorization": f"Bearer {token}"}
-        response = await self._tink_request(p.ENDPOINT_GRANT_DELEGATE, request.dict(exclude_none=True), headers=headers)
+        response = await self._tink_request(
+            p.ENDPOINT_GRANT_DELEGATE, request.dict(exclude_none=True), headers=headers, is_json=False
+        )
         return AuthorizationGrantDelegateResponse(**response)
+
+    async def _get_authorization_code(self, user_id: str, scope: str, token: str) -> AuthorizationGrantResponse:
+        request = AuthorizationGrantRequest(user_id=user_id, scope=scope)
+        headers = {"Authorization": f"Bearer {token}"}
+        response = await self._tink_request(p.ENDPOINT_GRANT, request.dict(exclude_none=True), headers=headers, is_json=False)
+        return AuthorizationGrantResponse(**response)
 
     async def create_user(self, market: str, locale: str) -> str:
         """
@@ -119,9 +126,19 @@ class TinkServerApi:
         """
         token_response = await self._get_client_access_token(p.SCOPE_AUTHORIZATION_GRANT)
         token = token_response.access_token
-        scope = ",".join(p.AUTHORIZATION_SCOPES)
+        scope = ",".join(p.DELEGATE_AUTHORIZATION_SCOPE)
         code_response = await self._authorize_tink_link(user_id, user_name, scope, token)
         return code_response.code
+
+    async def get_access_token_for_user(self, user_id: str) -> str:
+        """
+        Gets a token to refresh user information
+        Returns the code to use in the TinkApi
+        """
+        token_response = await self._get_client_access_token(p.SCOPE_AUTHORIZATION_GRANT)
+        token = token_response.access_token
+        response = await self._get_authorization_code(user_id, ",".join(p.USER_READ_SCOPES), token=token)
+        return response.code
 
 
 class TinkApi:
@@ -252,8 +269,6 @@ class TinkApi:
             raise TinkRuntimeException("Authorization code is not set or already used")
         data = OAuthTokenRequestParameters(
             code=self._code,
-            client_id=p.TINK_CLIENT_ID,
-            client_secret=p.TINK_CLIENT_SECRET,
             grant_type=GrantType.authorization_code,
         )
         response = await self._tink_auth_request(data)
@@ -267,8 +282,6 @@ class TinkApi:
             raise TinkRuntimeException("Cannot refresh without a refresh token")
         data = OAuthTokenRequestParameters(
             refresh_token=self._refresh_token,
-            client_id=p.TINK_CLIENT_ID,
-            client_secret=p.TINK_CLIENT_SECRET,
             grant_type=GrantType.refresh_token,
         )
         response = await self._tink_auth_request(data)
@@ -282,14 +295,15 @@ class TinkLinkApi:
         non_empty_params = query_params.dict(exclude_none=True)
         return f"{url}?{urlencode(non_empty_params)}"
 
-    def get_add_credentials_link(self, authorization_code: str) -> str:
+    def get_add_credentials_link(self, authorization_code: str, market: Optional[str] = None, test=False) -> str:
         """
-        Formats a Add Credentials link for Tink Link
+        Formats a Add Credentials link for Tink Link to add a bank account
+        The Add credentials adds a bank account to the Tink permanent user
         Returns the link
         """
+        test_string = "true" if test else None
         params = TinkLinkQueryParameters(
-            authorization_code=authorization_code,
-            scope=",".join(p.AUTHORIZATION_SCOPES),
+            authorization_code=authorization_code, scope=",".join(p.ADD_CREDENTIALS_SCOPE), test=test_string, market=market
         )
         return self._format_link(p.ENDPOINT_TINK_LINK_CREDENTIALS_ADD, params)
 
@@ -317,11 +331,12 @@ class TinkLinkApi:
         )
         return self._format_link(p.ENDPOINT_TINK_LINK_CREDENTIALS_AUTHENTICATE, params)
 
-    def get_authorize_link(self, market: str, locale: str = "en_UK", test: str = "false") -> str:
+    def get_authorize_link(self, market: str, locale: str = "en_UK", test=False) -> str:
         """
         Formats an Authorize Link for Tink Link
         This is a one-time link to get the balances
         Returns the link
         """
-        params = TinkLinkQueryParameters(market=market, locale=locale, scope=",".join(p.AUTHORIZATION_SCOPES), test=test)
+        test_string = "true" if test else None
+        params = TinkLinkQueryParameters(market=market, locale=locale, scope=",".join(p.USER_READ_SCOPES), test=test_string)
         return self._format_link(p.ENDPOINT_TINK_LINK_AUTHORIZE, params)

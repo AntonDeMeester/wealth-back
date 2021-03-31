@@ -1,22 +1,23 @@
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, root_validator
 
 from wealth.util.types import StringedEnum
 
-from .parameters import TINK_CLIENT_ID, TINK_LINK_REDIRECT_URI
+from ..tink import parameters as p
 
 
 class TinkLinkQueryParameters(BaseModel):
-    client_id: str = TINK_CLIENT_ID
-    redirect_uri: str = TINK_LINK_REDIRECT_URI
+    client_id: str = Field(default_factory=lambda: p.TINK_CLIENT_ID)
+    redirect_uri: str = Field(default_factory=lambda: p.TINK_LINK_REDIRECT_URI)
     scope: Optional[str]
     market: Optional[str]
     locale: Optional[str]
     authorization_code: Optional[str]
     credentials_id: Optional[str]
     test: Optional[str]
+    authenticate: Optional[bool]
 
 
 class GrantType(StringedEnum):
@@ -26,8 +27,8 @@ class GrantType(StringedEnum):
 
 
 class OAuthTokenRequestParameters(BaseModel):
-    client_id: str
-    client_secret: str
+    client_id: str = Field(default_factory=lambda: p.TINK_CLIENT_ID)
+    client_secret: str = Field(default_factory=lambda: p.TINK_CLIENT_SECRET)
     code: Optional[str]
     refresh_token: Optional[str]
     grant_type: GrantType
@@ -72,7 +73,7 @@ class TokenResponse(BaseModel):
     access_token: str
     expires_in: int
     id_hint: Optional[str]
-    refresh_token: str
+    refresh_token: Optional[str]
     scope: str
     token_type: str
 
@@ -182,12 +183,23 @@ class CreateUserResponse(BaseModel):
     user_id: str
 
 
+class AuthorizationGrantRequest(BaseModel):
+    user_id: str
+    external_user_id: Optional[str]
+    scope: str
+
+
+class AuthorizationGrantResponse(BaseModel):
+    code: str
+
+
 class AuthorizationGrantDelegateRequest(BaseModel):
     user_id: str
     external_user_id: Optional[str]
     id_hint: str
-    actor_client_id: str
+    actor_client_id: str = p.TINK_LINK_CLIENT_ID
     scope: str
+    response_type: str = "code"
 
 
 class AuthorizationGrantDelegateResponse(BaseModel):
@@ -200,3 +212,23 @@ class TinkLinkRedirectResponse(BaseModel):
 
 class TinkLinkCallbackRequest(BaseModel):
     code: str
+
+
+class TinkLinkAddBankRequest(BaseModel):
+    market: Optional[str] = None
+    test: bool = False
+
+
+class TinkCallbackRequest(BaseModel):
+    code: Optional[str] = None
+    credentials_id: Optional[str] = None
+
+    @root_validator
+    def either_one(cls, values):  # pylint: disable=no-self-argument
+        if not values["code"] and not values["credentials_id"]:
+            raise ValueError("At least one of code and credentials id must be filled in")
+        return values
+
+
+class TinkCallbackResponse(BaseModel):
+    credentials_id: Optional[str]

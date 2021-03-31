@@ -49,7 +49,6 @@ class User(Model):
 
     # Tink stuff
     tink_user_id: str = ""
-    tink_authorization_code: str = ""
     tink_credentials: List[str] = []
 
 

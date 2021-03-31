@@ -1,6 +1,6 @@
 import json
 from unittest.mock import patch
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -9,6 +9,7 @@ from tests.integrations.tink.factory import (
     generate_account,
     generate_account_list_response,
     generate_authorization_grant_delegate_response,
+    generate_authorization_grant_response,
     generate_create_user_response,
     generate_query_request,
     generate_query_response,
@@ -18,7 +19,7 @@ from tests.integrations.tink.factory import (
     generate_user_response,
 )
 from wealth.integrations.tink import parameters as p
-from wealth.integrations.tink.api import TinkApi, TinkServerApi
+from wealth.integrations.tink.api import TinkApi, TinkLinkApi, TinkServerApi
 from wealth.integrations.tink.types import GrantType, StatisticsResponseItem, TokenResponse
 
 
@@ -85,7 +86,8 @@ class TestTinkServerApi:
             "user_id": user_id,
             "id_hint": user_name,
             "actor_client_id": tink_client_id,
-            "scope": ",".join(p.AUTHORIZATION_SCOPES),
+            "scope": ",".join(p.DELEGATE_AUTHORIZATION_SCOPE),
+            "response_type": "code",
         }
         user_response = generate_authorization_grant_delegate_response(code=code, _raw=True)
         token = "access-token"
@@ -93,7 +95,7 @@ class TestTinkServerApi:
         httpx_mock.add_response(
             method="POST",
             url=p.TINK_BASE_URL + p.ENDPOINT_GRANT_DELEGATE,
-            match_content=json.dumps(expected_content).encode(),
+            match_content=urlencode(expected_content).encode(),
             headers={"Authorization": f"Bearer {token}"},
             json=user_response,
         )
@@ -103,6 +105,33 @@ class TestTinkServerApi:
                 p, "TINK_LINK_CLIENT_ID", tink_client_id
             ):
                 response = await api.get_authorization_code(user_id, user_name)
+                m.assert_called_with(p.SCOPE_AUTHORIZATION_GRANT)
+
+        assert response == code
+
+    @pytest.mark.asyncio
+    async def test_get_access_token_for_user(self, httpx_mock: HTTPXMock):
+        user_id = "user-id"
+        code = "code123"
+
+        expected_content = {
+            "user_id": user_id,
+            "scope": ",".join(p.USER_READ_SCOPES),
+        }
+        user_response = generate_authorization_grant_response(code=code, _raw=True)
+        token = "access-token"
+        token_response = generate_token_response(access_token=token)
+        httpx_mock.add_response(
+            method="POST",
+            url=p.TINK_BASE_URL + p.ENDPOINT_GRANT,
+            match_content=urlencode(expected_content).encode(),
+            headers={"Authorization": f"Bearer {token}"},
+            json=user_response,
+        )
+
+        async with TinkServerApi() as api:
+            with patch.object(api, "_get_client_access_token", return_value=token_response) as m:
+                response = await api.get_access_token_for_user(user_id)
                 m.assert_called_with(p.SCOPE_AUTHORIZATION_GRANT)
 
         assert response == code
@@ -256,3 +285,109 @@ class TestTinkApi:
                 result = await api.query(request)
 
         assert result == response
+
+
+class TestTinkLinkApi:
+    def test_get_add_credentials_link(self):
+        tink_client_id = "tink-client-id"
+        redirect_url = "https://redirect.url/callback"
+
+        auth_code = "auth-code-123"
+        expected_url_params = {
+            "client_id": [tink_client_id],
+            "redirect_uri": [redirect_url],
+            "authorization_code": [auth_code],
+            "scope": [",".join(p.ADD_CREDENTIALS_SCOPE)],
+        }
+        expected_url = p.TINK_LINK_BASE_URL + p.ENDPOINT_TINK_LINK_CREDENTIALS_ADD
+
+        api = TinkLinkApi()
+
+        with patch.object(p, "TINK_CLIENT_ID", tink_client_id), patch.object(p, "TINK_LINK_REDIRECT_URI", redirect_url):
+            result = api.get_add_credentials_link(auth_code)
+
+        parsed_url = urlparse(result)
+
+        assert parsed_url.geturl().startswith(expected_url)
+        assert parse_qs(parsed_url.query) == expected_url_params
+
+    def test_get_refresh_credentials_link(self):
+        tink_client_id = "tink-client-id"
+        redirect_url = "https://redirect.url/callback"
+
+        auth_code = "auth-code-123"
+        credentials_id = "cred-id-123"
+        expected_url_params = {
+            "client_id": [tink_client_id],
+            "redirect_uri": [redirect_url],
+            "authorization_code": [auth_code],
+            "credentials_id": [credentials_id],
+        }
+        expected_url = p.TINK_LINK_BASE_URL + p.ENDPOINT_TINK_LINK_CREDENTIALS_REFRESH
+
+        api = TinkLinkApi()
+
+        with patch.object(p, "TINK_CLIENT_ID", tink_client_id), patch.object(p, "TINK_LINK_REDIRECT_URI", redirect_url):
+            result = api.get_refresh_credentials_link(auth_code, credentials_id)
+
+        parsed_url = urlparse(result)
+
+        assert parsed_url.geturl().startswith(expected_url)
+        assert parse_qs(parsed_url.query) == expected_url_params
+
+    def test_get_authenticate_credentials_link(self):
+        tink_client_id = "tink-client-id"
+        redirect_url = "https://redirect.url/callback"
+
+        auth_code = "auth-code-123"
+        credentials_id = "cred-id-123"
+        expected_url_params = {
+            "client_id": [tink_client_id],
+            "redirect_uri": [redirect_url],
+            "authorization_code": [auth_code],
+            "credentials_id": [credentials_id],
+        }
+        expected_url = p.TINK_LINK_BASE_URL + p.ENDPOINT_TINK_LINK_CREDENTIALS_AUTHENTICATE
+
+        api = TinkLinkApi()
+
+        with patch.object(p, "TINK_CLIENT_ID", tink_client_id), patch.object(p, "TINK_LINK_REDIRECT_URI", redirect_url):
+            result = api.get_authenticate_credentials_link(auth_code, credentials_id)
+
+        parsed_url = urlparse(result)
+
+        assert parsed_url.geturl().startswith(expected_url)
+        assert parse_qs(parsed_url.query) == expected_url_params
+
+    data_test_get_authorize_link = ((True,), (False,))
+
+    @pytest.mark.parametrize("test", data_test_get_authorize_link)
+    def test_get_authorize_link(self, test: bool):
+        tink_client_id = "tink-client-id"
+        redirect_url = "https://redirect.url/callback"
+
+        market = "SE"
+        locale = "en_UK"
+        expected_url_params = {
+            "client_id": [tink_client_id],
+            "redirect_uri": [redirect_url],
+            "market": [market],
+            "locale": [locale],
+            "scope": [",".join(p.USER_READ_SCOPES)],
+        }
+        if test:
+            expected_url_params["test"] = ["true"]
+        expected_url = p.TINK_LINK_BASE_URL + p.ENDPOINT_TINK_LINK_AUTHORIZE
+
+        api = TinkLinkApi()
+
+        with patch.object(p, "TINK_CLIENT_ID", tink_client_id), patch.object(p, "TINK_LINK_REDIRECT_URI", redirect_url):
+            if test:
+                result = api.get_authorize_link(market, locale, test)
+            else:
+                result = api.get_authorize_link(market, locale)
+
+        parsed_url = urlparse(result)
+
+        assert parsed_url.geturl().startswith(expected_url)
+        assert parse_qs(parsed_url.query) == expected_url_params

@@ -6,7 +6,12 @@ class WealthException(Exception):
 
 
 class IntegrationException(WealthException):
-    pass
+    def __init__(self, detail: str = ""):
+        super().__init__(detail)
+        self.detail = detail
+
+    def __str__(self) -> str:
+        return self.detail
 
 
 class ApiException(IntegrationException):

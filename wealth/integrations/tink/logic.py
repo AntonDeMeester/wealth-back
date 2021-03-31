@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from datetime import date, timedelta
 from typing import List, Optional
 
 from wealth.database.api import engine
@@ -8,10 +7,10 @@ from wealth.database.models import Account, AccountSource, User, WealthItem
 from wealth.integrations.tink.api import TinkApi, TinkLinkApi, TinkServerApi
 from wealth.integrations.tink.exceptions import TinkRuntimeException
 from wealth.parameters.constants import Currency
-from wealth.parameters.general import GeneralParameters
 
 from .api import TinkApi, TinkServerApi
 from .types import QueryRequest, Resolution, StatisticsRequest, StatisticType
+from .utils import generate_dates_from_today, generate_user_hint
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,7 +78,7 @@ class TinkLogic:
         LOGGER.info(f"Getting Tink user balances of {user_id}")
         request = StatisticsRequest(
             description=user_id,
-            periods=[str(i) for i in range(2015, date.today().year + 1)],
+            periods=generate_dates_from_today(3),
             resolution=Resolution.daily,
             types=[StatisticType.balance_by_account],
         )
@@ -103,7 +102,7 @@ class TinkLogic:
         LOGGER.info(f"Getting Tink account balances of {account.external_id}")
         request = StatisticsRequest(
             description=account.external_id,
-            periods=[f"{ date.today() - timedelta(days=i):{GeneralParameters.DATE_FORMAT}}" for i in range(365 * 3)],
+            periods=generate_dates_from_today(3),
             resolution=Resolution.daily,
             types=[StatisticType.balance_by_account],
         )
@@ -155,62 +154,93 @@ class TinkLogic:
         )
         await self.api.query(request)
 
-    async def create_tink_user(self, user: User) -> str:
+    async def create_tink_user(self, user: User) -> User:
         """
         Does the initial backend to create a Tink user
-        Returns the URL to be used to log in
+        Does not add any credentials / banks to the user
+        If a Tink User is already created for this user, this does nothing
         """
         LOGGER.info("Generating link to create a user in Tink")
+        if user.tink_user_id:
+            return user
         user_id = await self.server.create_user(user.market, user.locale)
-        client_hint = f"{user.first_name} {user.last_name}"
-        auth_code = await self.server.get_authorization_code(user_id, client_hint)
-
         user.tink_user_id = user_id
-        user.tink_authorization_code = auth_code
         await engine.save(user)
-        return self.tink_link.get_add_credentials_link(auth_code)
+        return user
 
-    async def initiate_refresh_credentials(self, user: User, credentials_id: str) -> str:
+    async def get_url_to_add_bank_for_tink_user(self, user: User, market: Optional[str], test=False) -> str:
+        """
+        Initiates the logic to add a bank account for a tink user
+        Return the redirect URL to TinkLink to be used
+        """
+        if not user.tink_user_id:
+            raise TinkRuntimeException("A tink user needs to be created to refresh it from the backend")
+
+        client_hint = generate_user_hint(user)
+        auth_code = await self.server.get_authorization_code(user.tink_user_id, client_hint)
+
+        return self.tink_link.get_add_credentials_link(auth_code, market, test)
+
+    async def get_url_to_initiate_refresh_credentials(self, user: User, credentials_id: str) -> str:
         """
         Returns the link to use to refresh data and credentials of the users
-        Should be followed in the UI
+        Return the redirect URL to TinkLink to be used
         """
-        assert credentials_id in user.tink_credentials, "Credentials not part of the user"
+        if credentials_id not in user.tink_credentials:
+            raise TinkRuntimeException("Credentials not part of the user")
+        if not user.tink_user_id:
+            raise TinkRuntimeException("A tink user needs to be created to refresh it from the backend")
         LOGGER.info("Generating link to refresh the credentials of the Tink User")
-        client_hint = f"{user.first_name} {user.last_name}"
+        client_hint = generate_user_hint(user)
         auth_code = await self.server.get_authorization_code(user.tink_user_id, client_hint)
 
         return self.tink_link.get_refresh_credentials_link(auth_code, credentials_id)
 
+    async def get_wealth_items_for_account(self, account: Account) -> List[WealthItem]:
+        await self.generate_transactions(account.external_id)
+        return await self.get_account_balances(account)
 
-async def update_account(tink: TinkLogic, account: Account) -> List[WealthItem]:
-    await tink.generate_transactions(account.external_id)
-    return await tink.get_account_balances(account)
-
-
-async def execute_callback(code: str, user: User):
-    """
-    Executes the callback from an account login from Tink Link
-    Will get the user id, get the accounts and get the balance per day for each account
-    This will be saved in the database
-    """
-    async with TinkLogic() as tink:
-        LOGGER.info("Executing callback logic for Tink: Getting accounts, and fetching all balances")
-        await tink.initialise_tink_api(code)
-        user.tink_user_id = await tink.get_user_id()
-        new_accounts = await tink.get_accounts()
+    async def update_all_accounts(self, user: User) -> User:
+        new_accounts = await self.get_accounts()
         # Add new accounts, and remove stale account information
         user.accounts = new_accounts + [account for account in user.accounts if account not in new_accounts]
 
         balances: List[WealthItem] = user.balances
-        new_balances_list = await asyncio.gather(*[update_account(tink, account) for account in new_accounts])
+        new_balances_list = await asyncio.gather(*[self.get_wealth_items_for_account(account) for account in new_accounts])
         for account, new_balances in zip(new_accounts, new_balances_list):
             balances = [balance for balance in balances if balance.account_id != account.external_id] + new_balances
         user.balances = balances
 
         await engine.save(user)
+        return user
 
+    async def refresh_user_from_backend(self, user: User) -> User:
+        if not user.tink_user_id:
+            raise TinkRuntimeException("A tink user needs to be created to refresh it from the backend")
+        code = await self.server.get_access_token_for_user(user.tink_user_id)
+        await self.initialise_tink_api(code)
+        user = await self.update_all_accounts(user)
+        return user
 
-async def create_tink_user(user: User) -> str:
-    async with TinkLogic() as tink:
-        return await tink.create_tink_user(user)
+    async def execute_callback_for_authorize(self, code: str, user: User) -> User:
+        """
+        Executes the callback from an account login from Tink Link
+        Will get the accounts and get the balance per day for each account
+        This will be saved in the database
+        """
+        LOGGER.info("Executing callback logic for Tink: Getting accounts, and fetching all balances")
+        await self.initialise_tink_api(code)
+        user = await self.update_all_accounts(user)
+        return user
+
+    async def execute_callback_for_add_credentials(self, credentials_id: str, user: User) -> User:
+        """
+        Executes the callback from an account login from Tink Link
+        Will get the accounts and get the balance per day for each account
+        This will be saved in the database
+        """
+        LOGGER.info("Executing callback logic for Tink credentials")
+        user.tink_credentials = list(set(user.tink_credentials + [credentials_id]))
+        await engine.save(user)
+        user = await self.refresh_user_from_backend(user)
+        return user

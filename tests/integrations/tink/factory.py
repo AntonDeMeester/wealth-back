@@ -4,6 +4,7 @@ from wealth.integrations.tink.types import (
     AccountListResponse,
     AccountType,
     AuthorizationGrantDelegateResponse,
+    AuthorizationGrantResponse,
     CreateUserResponse,
     QueryRequest,
     QueryResponse,
@@ -33,6 +34,11 @@ generate_create_user_response = pydantic_model_generator(CreateUserResponse, _cr
 _authorization_grant_delegate_response_defaults = {"code": "code123"}
 generate_authorization_grant_delegate_response = pydantic_model_generator(
     AuthorizationGrantDelegateResponse, _authorization_grant_delegate_response_defaults
+)
+
+_authorization_grant_response_defaults = {"code": "code123"}
+generate_authorization_grant_response = pydantic_model_generator(
+    AuthorizationGrantResponse, _authorization_grant_response_defaults
 )
 
 _statistics_request_defaults = {
