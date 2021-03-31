@@ -1,0 +1,35 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python Workflow
+
+on:
+  push:
+    branches: [ '*' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps: 
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pipenv
+        pipenv sync --dev
+    - name: Linting
+      run: make check
+    - name: Test with pytest
+      env: # Set the secret as an input
+        TINK_CLIENT_ID: tink-client-id
+        TINK_CLIENT_SECRET: tink-client-secret
+        MONGO_URL: fake-mongo-db
+        APP_SECRET: some-app-secret
+        ENV: local
+        KLARNA_API_KEY: klarna-api-key
+      run: make test
