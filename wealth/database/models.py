@@ -61,7 +61,7 @@ class ExchangeRate(Model):
     """A class for the history of an exchange rate against the euro"""
 
     currency: Currency
-    rates: List[ExchangeRateItem]
+    rates: List[ExchangeRateItem] = []
 
     def get_rates_in_dict(self) -> dict[str, float]:
         return {r.date: r.rate for r in self.rates}

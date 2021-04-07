@@ -12,11 +12,12 @@ from wealth.integrations.exchangeratesapi.dependency import Exchanger
 
 
 class TestWealthItem:
-    def test_calculate_amount_in_euros(self):
+    @pytest.mark.asyncio
+    async def test_calculate_amount_in_euros(self):
         converted_amount = 200
         wealth_item_data = generate_wealth_item(amount_in_euros=500, _raw=True)
         with patch.object(Exchanger, "convert_to_euros_on_date", return_value=converted_amount):
-            item = WealthItem(**wealth_item_data)
+            item = await WealthItem.parse_obj_async(wealth_item_data)
 
         assert item.amount_in_euro == converted_amount
 

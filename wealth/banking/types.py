@@ -15,7 +15,12 @@ class WealthItem(BaseModel):
     account_id: str
     currency: Currency
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    async def complete_item(self):
         date_obj = date_parser.parse(self.date).date()
-        self.amount_in_euro = rates.convert_to_euros_on_date(self.amount, self.currency, date_obj)
+        self.amount_in_euro = await rates.convert_to_euros_on_date(self.amount, self.currency, date_obj)
+
+    @classmethod
+    async def parse_obj_async(cls, *args, **kwargs):
+        obj = cls.parse_obj(*args, **kwargs)
+        await obj.complete_item()
+        return obj
