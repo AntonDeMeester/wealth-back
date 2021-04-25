@@ -274,15 +274,16 @@ class TestTinkLogic:
         new_account_id = "new-acc"
         source = AccountSource.tink
 
-        other_account = generate_db_account(source=source, external_id=other_account_id)
-        refresh_account = generate_db_account(source=source, external_id=refresh_account_id)
-        new_account = generate_db_account(source=source, external_id=new_account_id)
-
         other_balances = [generate_wealth_item(account_id=other_account_id) for _ in range(5)]
         original_refresh_balances = [generate_wealth_item(account_id=refresh_account_id) for _ in range(6)]
+
+        other_account = generate_db_account(source=source, external_id=other_account_id, balances=other_balances)
+        refresh_account = generate_db_account(source=source, external_id=refresh_account_id, balances=original_refresh_balances)
+        new_account = generate_db_account(source=source, external_id=new_account_id)
+
         original_accounts = [other_account, refresh_account]
 
-        user = generate_user(balances=other_balances + original_refresh_balances, accounts=original_accounts)
+        user = generate_user(accounts=original_accounts)
         await local_database.save(user)
 
         get_accounts_response = [refresh_account, new_account]

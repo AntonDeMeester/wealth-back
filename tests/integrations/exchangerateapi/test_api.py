@@ -27,17 +27,17 @@ class TestExchanger:
             ExchangeRate(
                 currency=Currency.SEK,
                 rates=[
-                    ExchangeRateItem(date="2020-02-02", rate=10.0202),
-                    ExchangeRateItem(date="2020-02-01", rate=10.0201),
-                    ExchangeRateItem(date="2020-01-31", rate=10.0131),
+                    ExchangeRateItem(date=datetime(2020, 2, 2), rate=10.0202),
+                    ExchangeRateItem(date=datetime(2020, 2, 1), rate=10.0201),
+                    ExchangeRateItem(date=datetime(2020, 1, 1), rate=10.0131),
                 ],
             ),
             ExchangeRate(
                 currency=Currency.DKK,
                 rates=[
-                    ExchangeRateItem(date="2020-02-02", rate=7.0202),
-                    ExchangeRateItem(date="2020-02-01", rate=7.0201),
-                    ExchangeRateItem(date="2020-01-31", rate=7.0131),
+                    ExchangeRateItem(date=datetime(2020, 2, 2), rate=7.0202),
+                    ExchangeRateItem(date=datetime(2020, 2, 1), rate=7.0201),
+                    ExchangeRateItem(date=datetime(2020, 1, 1), rate=7.0131),
                 ],
             ),
         ]
@@ -114,7 +114,7 @@ class TestExchanger:
 
         currency = Currency.SEK
         amount = 100
-        currency_date = date(2020, 1, 1)
+        currency_date = date(2019, 1, 1)
 
         exchanger = Exchanger()
         converted = await exchanger.convert_to_euros_on_date(amount, currency, currency_date)

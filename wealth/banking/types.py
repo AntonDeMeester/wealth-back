@@ -1,3 +1,5 @@
+from datetime import date
+
 from dateutil.parser import parser
 from pydantic import BaseModel
 
@@ -9,15 +11,13 @@ date_parser = parser()
 
 
 class WealthItem(BaseModel):
-    date: str
+    date: date
     amount: float
     amount_in_euro: float = 0
-    account_id: str
     currency: Currency
 
     async def complete_item(self):
-        date_obj = date_parser.parse(self.date).date()
-        self.amount_in_euro = await rates.convert_to_euros_on_date(self.amount, self.currency, date_obj)
+        self.amount_in_euro = await rates.convert_to_euros_on_date(self.amount, self.currency, self.date)
 
     @classmethod
     async def parse_obj_async(cls, *args, **kwargs):

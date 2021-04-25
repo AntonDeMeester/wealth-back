@@ -3,6 +3,7 @@ from unittest.mock import patch
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytest
+from fastapi.encoders import jsonable_encoder
 from pytest_httpx import HTTPXMock
 
 from tests.integrations.tink.factory import (
@@ -212,7 +213,7 @@ class TestTinkApi:
         httpx_mock.add_response(
             method="POST",
             url=p.TINK_BASE_URL + p.ENDPOINT_STATISTICS,
-            match_content=json.dumps(request.dict()).encode(),
+            match_content=json.dumps(jsonable_encoder(request)).encode(),
             headers={"Authorization": f"Bearer {token.access_token}"},
             json=response,
         )

@@ -1,11 +1,12 @@
+import uuid
 from unittest.mock import patch
 
 import httpx
 import pytest
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 
-from tests.banking.factory import generate_wealth_item
-from tests.database.factory import generate_account, generate_user
+from tests.database.factory import generate_account, generate_user, generate_wealth_item
 from wealth.authentication import get_authenticated_user
 from wealth.banking.types import WealthItem
 from wealth.integrations.exchangeratesapi.dependency import Exchanger
@@ -27,7 +28,8 @@ class TestBankingViews:
     async def test_get_balances(self, app_fixture: FastAPI):
         number_of_balances = 5
         balances = [generate_wealth_item() for _ in range(number_of_balances)]
-        user = generate_user(balances=balances)
+        account = generate_account(balances=balances)
+        user = generate_user(accounts=[account])
 
         app_fixture.dependency_overrides[get_authenticated_user] = lambda: user
 
@@ -59,7 +61,7 @@ class TestBankingViews:
 
         assert response.status_code == 200
         data = response.json()
-        assert data == [acc.doc() for acc in accounts]
+        assert data == [jsonable_encoder(acc.doc()) for acc in accounts]
 
     @pytest.mark.asyncio
     async def test_get_accounts_not_auth(self, app_fixture: FastAPI):
@@ -70,10 +72,10 @@ class TestBankingViews:
 
     @pytest.mark.asyncio
     async def test_get_account(self, app_fixture: FastAPI):
-        external_id = "hello-world"
-        one_account = generate_account(external_id=external_id)
+        external_id = uuid.uuid4()
+        one_account = generate_account(account_id=external_id)
         number_of_accounts = 5
-        accounts = [generate_account() for _ in range(number_of_accounts - 1)] + [one_account]
+        accounts = [generate_account(account_id=uuid.uuid4()) for _ in range(number_of_accounts - 1)] + [one_account]
         user = generate_user(accounts=accounts)
 
         app_fixture.dependency_overrides[get_authenticated_user] = lambda: user
@@ -83,7 +85,7 @@ class TestBankingViews:
 
         assert response.status_code == 200
         data = response.json()
-        assert data == one_account.doc()
+        assert data == jsonable_encoder(one_account.doc())
 
     @pytest.mark.asyncio
     async def test_get_account_not_auth(self, app_fixture: FastAPI):
@@ -96,12 +98,15 @@ class TestBankingViews:
 
     @pytest.mark.asyncio
     async def test_get_account_balances(self, app_fixture: FastAPI):
-        account_id = "hello-world"
         number_of_account_balances = 7
-        account_balances = [generate_wealth_item(account_id=account_id) for _ in range(number_of_account_balances)]
+        account_balances = [generate_wealth_item() for _ in range(number_of_account_balances)]
         number_of_other_account_balances = 5
         other_account_balances = [generate_wealth_item() for _ in range(number_of_other_account_balances)]
-        user = generate_user(balances=account_balances + other_account_balances)
+
+        account_id = uuid.uuid4()
+        account = generate_account(account_id=account_id, balances=account_balances)
+        other_account = generate_account(balances=other_account_balances)
+        user = generate_user(accounts=[account, other_account])
 
         app_fixture.dependency_overrides[get_authenticated_user] = lambda: user
 

@@ -54,7 +54,7 @@ class StatisticType(StringedEnum):
 class StatisticsRequest(BaseModel):
     description: str
     padResultUntilToday: bool = True
-    periods: List[str] = []
+    periods: List[date] = []
     resolution: Resolution
     types: List[StatisticType]
 

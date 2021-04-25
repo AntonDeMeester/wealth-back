@@ -85,9 +85,8 @@ class TinkLogic:
         response = await self.api.get_statistics(request)
         return [
             WealthItem(
-                date=str(item.period),
+                date=item.period,  # type: ignore[arg-type]
                 amount=item.value,
-                account_id=user_id,
                 currency=Currency("EUR"),
                 raw=item.json(),
             )
@@ -109,9 +108,8 @@ class TinkLogic:
         response = await self.api.get_statistics(request)
         return [
             WealthItem(
-                date=str(item.period),
+                date=item.period,  # type: ignore[arg-type]
                 amount=item.value,
-                account_id=account.external_id,
                 currency=Currency(account.currency),
                 raw=item.json(),
             )
@@ -205,11 +203,9 @@ class TinkLogic:
         # Add new accounts, and remove stale account information
         user.accounts = new_accounts + [account for account in user.accounts if account not in new_accounts]
 
-        balances: List[WealthItem] = user.balances
         new_balances_list = await asyncio.gather(*[self.get_wealth_items_for_account(account) for account in new_accounts])
         for account, new_balances in zip(new_accounts, new_balances_list):
-            balances = [balance for balance in balances if balance.account_id != account.external_id] + new_balances
-        user.balances = balances
+            account.balances = new_balances
 
         await engine.save(user)
         return user

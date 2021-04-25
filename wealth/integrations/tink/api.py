@@ -4,7 +4,9 @@ from enum import Enum
 from typing import Dict, Optional
 from urllib.parse import urlencode
 
-import httpx
+from fastapi.encoders import jsonable_encoder
+
+from wealth.util.base_api import BaseApi
 
 from ..tink import parameters as p
 from .exceptions import TinkApiException, TinkConfigurationException, TinkRuntimeException
@@ -36,7 +38,7 @@ class HttpMethod(str, Enum):
     GET = "get"
 
 
-class TinkServerApi:
+class TinkServerApi(BaseApi):
     """
     Tink methods for any calls done purely with server/Wealth credentials
     without any client/user credentials
@@ -44,28 +46,12 @@ class TinkServerApi:
     Use a async context manager to use, to make sure the connections are closed properly.
     """
 
-    def __init__(self):
-        self.client: Optional[httpx.AsyncClient] = None
-
-    async def __aenter__(self):
-        self.initialise()
-        return self
-
-    async def __aexit__(self, *excinfo):
-        await self.close()
-
-    def initialise(self):
-        self.client = httpx.AsyncClient()
-
-    async def close(self):
-        await self.client.aclose()
-        self.client = None
-
     # pylint: disable=no-self-use
     async def _tink_request(self, endpoint: str, data: Dict, headers: Dict = None, is_json=True) -> Dict:
         if self.client is None:
             raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
         url = p.TINK_BASE_URL + endpoint
+        data = jsonable_encoder(data)
         LOGGER.debug(f"Sending post request to {url} with {json.dumps(data)}")
         if is_json:
             response = await self.client.post(url, json=data, headers=headers)
@@ -141,7 +127,7 @@ class TinkServerApi:
         return response.code
 
 
-class TinkApi:
+class TinkApi(BaseApi):
     """
     Tink methods for any calls done with User credentials
 
@@ -149,24 +135,10 @@ class TinkApi:
     """
 
     def __init__(self):
+        super().__init__()
         self._code: Optional[str] = None
         self._auth_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
-        self.client: Optional[httpx.AsyncClient] = None
-
-    async def __aenter__(self):
-        self.initialise()
-        return self
-
-    async def __aexit__(self, *excinfo):
-        await self.close()
-
-    def initialise(self):
-        self.client = httpx.AsyncClient()
-
-    async def close(self):
-        await self.client.aclose()
-        self.client = None
 
     async def initialise_code(self, code: str):
         """Sets the Tink Link code to use for access"""
@@ -220,6 +192,7 @@ class TinkApi:
             await self._authenticate()
 
         url = p.TINK_BASE_URL + endpoint
+        data = jsonable_encoder(data)
         headers = {"Authorization": f"Bearer {self._auth_token}"}
         LOGGER.debug(f"Sending {method} request to {url} with {json.dumps(data)}")
         response = await self.client.request(method, url, json=data, headers=headers)
@@ -234,7 +207,7 @@ class TinkApi:
         if self.client is None:
             raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
         url = p.TINK_BASE_URL + p.ENDPOINT_TOKEN
-        data_dict = data.dict(exclude_none=True)
+        data_dict = jsonable_encoder(data.dict(exclude_none=True))
         LOGGER.debug(f"Sending auth request for the TinkClientAPI with {json.dumps(data_dict)}")
         response = await self.client.post(url, data=data_dict)
         if response.is_error:
