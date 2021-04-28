@@ -1,4 +1,4 @@
-from wealth.util.exceptions import ApiException, IntegrationException
+from wealth.util.exceptions import IntegrationApiException, IntegrationException
 
 
 class TinkException(IntegrationException):
@@ -9,7 +9,7 @@ class TinkConfigurationException(TinkException):
     pass
 
 
-class TinkApiException(ApiException, TinkException):
+class TinkApiException(IntegrationApiException, TinkException):
     API_NAME: str = "tink"
 
 

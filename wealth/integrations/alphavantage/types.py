@@ -29,3 +29,19 @@ class TimeSeries(BaseModel):
 class TimeSeriesDailyResponse(BaseModel):
     meta_data: MetaData = Field(..., alias="Meta Data")
     time_series: TimeSeries = Field(..., alias="Time Series (Daily)")
+
+
+class SearchItem(BaseModel):
+    symbol: str = Field(..., alias="1. symbol")
+    name: str = Field(..., alias="2. name")
+    type: str = Field(..., alias="3. type")
+    region: str = Field(..., alias="4. region")
+    market_open: str = Field(..., alias="5. marketOpen")
+    market_close: str = Field(..., alias="6. marketClose")
+    timezone: str = Field(..., alias="7. timezone")
+    currency: str = Field(..., alias="8. currency")
+    match_score: float = Field(..., alias="9. matchScore")
+
+
+class SearchResponse(BaseModel):
+    best_matches: list[SearchItem] = Field(..., alias="bestMatches")

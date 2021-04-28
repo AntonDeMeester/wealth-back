@@ -1,4 +1,4 @@
-from wealth.util.exceptions import ApiException, IntegrationException
+from wealth.util.exceptions import IntegrationApiException, IntegrationException
 
 
 class ExchangeRateApiException(IntegrationException):
@@ -9,7 +9,7 @@ class ExchangeRateApiConfigurationException(ExchangeRateApiException):
     pass
 
 
-class ExchangeRateApiApiException(ApiException, ExchangeRateApiException):
+class ExchangeRateApiApiException(IntegrationApiException, ExchangeRateApiException):
     API_NAME: str = "exchange rate api"
 
 

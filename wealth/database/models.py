@@ -95,6 +95,14 @@ class User(Model):
             raise ValueError(f"Found more than one account with account_id {account_id}")
         return accounts[0]
 
+    def find_stock_position(self, position_id: Union[UUID, str]) -> Optional[StockPosition]:
+        positions = [p for p in self.stock_positions if str(p.position_id) == str(position_id)]
+        if not positions:
+            return None
+        if len(positions) > 1:
+            raise ValueError(f"Found more than one account with account_id {position_id}")
+        return positions[0]
+
 
 class ExchangeRateItem(EmbeddedModel):
     date: datetime
@@ -136,4 +144,8 @@ class StockTicker(Model):
     """A class for the history of a stock ticker"""
 
     symbol: str
+    currency: Currency
     rates: List[StockTickerItem] = []
+
+    def get_rates_in_dict(self) -> dict[date, float]:
+        return {r.date.date(): r.price for r in self.rates}

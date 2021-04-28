@@ -42,7 +42,7 @@ def refresh(authorize: WealthJwt = Depends()):
 
 @router.get("/user", response_model=ViewUser)
 async def get_user(current_user: User = Depends(get_authenticated_user)):
-    return ViewUser.parse_obj(current_user)
+    return current_user
 
 
 @router.post("/user", response_model=ViewUser)
@@ -52,8 +52,7 @@ async def create_user(user: CreateUser, authorize: WealthJwt = Depends()):
 
     db_user = User.parse_obj(user.dict())
     db_user = await engine.save(db_user)
-    return_user = ViewUser.parse_obj(db_user.dict())
-    return return_user
+    return db_user
 
 
 # @router.put("/user", response_model=ViewUser)

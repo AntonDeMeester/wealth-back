@@ -1,13 +1,21 @@
 import asyncio
 
 from wealth.database.api import engine
+from wealth.database.models import StockPosition
 from wealth.integrations.alphavantage.api import AlphaVantageApi
+from wealth.integrations.exchangeratesapi.scripts import import_from_ecb
+from wealth.stocks import logic
+
+
+async def create_stock_ticker():
+    position = StockPosition(amount=1, start_date="2020-01-01", ticker="TSLA")
+    balances = await logic.populate_stock_balances(position)
+    print(position)
 
 
 async def main():
-    async with AlphaVantageApi() as api:
-        r = await api.get_ticker_history("ADYEN.AMS")
-        await engine.save(r)
+    # await create_stock_ticker()
+    await import_from_ecb()
 
 
 if __name__ == "__main__":

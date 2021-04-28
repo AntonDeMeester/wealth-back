@@ -9,5 +9,5 @@ BASE_URL = "https://api.exchangerate.host/"
 ENDPOINT_HISTORY = "timeseries"
 EARLIEST_DATE = "2000-01-01"
 
-DEFAULT_CONVERSION = {Currency.SEK: 10}
+DEFAULT_CONVERSION = {Currency.SEK: 10, Currency.USD: 1.2, Currency.GBP: 0.8, Currency.DKK: 7}
 EXCHANGE_RATE_REFRESH_INTERVAL = timedelta(days=1)

@@ -1,4 +1,4 @@
-from wealth.util.exceptions import ApiException, IntegrationException
+from wealth.util.exceptions import IntegrationApiException, IntegrationException
 
 
 class AlphaVantageException(IntegrationException):
@@ -9,9 +9,17 @@ class AlphaVantageConfigurationException(AlphaVantageException):
     pass
 
 
-class AlphaVantageApiException(ApiException, AlphaVantageException):
+class AlphaVantageApiException(IntegrationApiException, AlphaVantageException):
     API_NAME: str = "alpha vantage"
 
 
 class AlphaVantageRuntimeException(AlphaVantageException):
     pass
+
+
+class TickerNotFoundException(AlphaVantageException):
+    ticker: str
+
+    def __init__(self, ticker: str, detail=""):
+        super().__init__(detail=detail)
+        self.ticker = ticker

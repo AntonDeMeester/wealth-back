@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi.encoders import jsonable_encoder
@@ -8,6 +8,7 @@ from fastapi.encoders import jsonable_encoder
 from wealth.database.api import engine
 from wealth.database.models import ExchangeRate
 from wealth.parameters.constants import Currency
+from wealth.util.conversion import get_rate_at_date
 
 from .exceptions import ExchangeRateApiRuntimeException
 from .parameters import DEFAULT_CONVERSION, EXCHANGE_RATE_REFRESH_INTERVAL
@@ -54,17 +55,12 @@ class Exchanger:
         if currency == Currency.EUR:
             return 1
         rates = await cls.get_rates()
-        attempts = 0
-        if currency not in rates:
+        currency_rates = rates.get(currency)
+        if currency_rates is None:
             raise ExchangeRateApiRuntimeException(f"Currency {currency} is not supported yet.")
-        while attempts < 14:
-            try:
-                exchange_rate = rates[currency][currency_date]
-            except KeyError:
-                currency_date -= timedelta(days=1)
-                attempts += 1
-            else:
-                return exchange_rate
+        exchange_rate = get_rate_at_date(currency_rates, currency_date)
+        if exchange_rate is not None:
+            return exchange_rate
         LOGGER.warning(f"Could not convert to {currency} to euros on {currency_date}")
-        LOGGER.debug(f"Current rates for {currency} are: {json.dumps(jsonable_encoder(rates[currency]))}")
+        LOGGER.debug(f"Current rates for {currency} are: {json.dumps(jsonable_encoder(currency_rates))}")
         return DEFAULT_CONVERSION[currency]

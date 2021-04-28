@@ -6,6 +6,7 @@ class Currency(str, Enum):
     SEK = "SEK"
     DKK = "DKK"
     GBP = "GBP"
+    USD = "USD"
 
     @classmethod
     def get_all(cls) -> list[str]:
