@@ -6,6 +6,8 @@ from wealth.database.models import StockPosition, StockTicker, WealthItem
 from wealth.integrations.alphavantage.api import AlphaVantageApi
 from wealth.util.conversion import get_rate_at_date
 
+from .types import SearchItem
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -37,3 +39,9 @@ async def get_or_create_stock_ticker(ticker: str) -> StockTicker:
         assert stock_ticker is not None
         await engine.save(stock_ticker)
     return stock_ticker
+
+
+async def search_ticker(ticker: str) -> list[SearchItem]:
+    async with AlphaVantageApi() as api:
+        response = await api.search_ticker(ticker)
+    return response.best_matches

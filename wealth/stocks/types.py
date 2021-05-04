@@ -44,3 +44,11 @@ class StockPositionResponse(BaseModel):
     amount: float
     start_date: date
     ticker: str
+
+
+class SearchItem(BaseModel):
+    ticker: str = Field(..., alias="symbol")
+    name: str
+    type: str
+    region: str
+    match_score: float

@@ -11,7 +11,7 @@ from .types import SearchResponse, TimeSeriesDailyResponse
 
 class AlphaVantageApi(BaseApi):
     async def get_ticker_history(self, ticker: str) -> StockTicker:
-        search_response = await self._search_ticker(ticker)
+        search_response = await self.search_ticker(ticker)
         search_matches = search_response.best_matches
         if not search_matches or search_matches[0].match_score < 0.8:
             raise TickerNotFoundException(ticker)
@@ -24,15 +24,15 @@ class AlphaVantageApi(BaseApi):
         ]
         return ticker_obj
 
+    async def search_ticker(self, ticker: str) -> SearchResponse:
+        params = {"keywords": ticker, "function": FUNCTION_SEARCH}
+        response = await self._execute_request(params)
+        return SearchResponse.parse_obj(response)
+
     async def _get_ticker_history(self, ticker: str) -> TimeSeriesDailyResponse:
         params = {"symbol": ticker, "function": FUNCTION_TIME_SERIES, "outputsize": "full"}
         response = await self._execute_request(params)
         return TimeSeriesDailyResponse.parse_obj(response)
-
-    async def _search_ticker(self, ticker: str) -> SearchResponse:
-        params = {"keywords": ticker, "function": FUNCTION_SEARCH}
-        response = await self._execute_request(params)
-        return SearchResponse.parse_obj(response)
 
     async def _execute_request(self, params: dict) -> dict:
         if self.client is None:

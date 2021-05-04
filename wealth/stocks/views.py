@@ -7,8 +7,8 @@ from wealth.database.models import User
 from wealth.integrations.alphavantage.exceptions import TickerNotFoundException
 from wealth.util.exceptions import NotFoundException
 
-from .logic import populate_stock_balances
-from .types import StockPositionRequest, StockPositionResponse, StockPositionUpdate, WealthItem
+from .logic import populate_stock_balances, search_ticker
+from .types import SearchItem, StockPositionRequest, StockPositionResponse, StockPositionUpdate, WealthItem
 
 router = APIRouter()
 
@@ -78,3 +78,9 @@ async def get_balances(user: User = Depends(get_authenticated_user)):
     for p in user.stock_positions:
         balances += [await WealthItem.parse_obj_async(b) for b in p.balances]
     return balances
+
+
+@router.get("/search/{ticker}", response_model=list[SearchItem], response_model_by_alias=False)
+async def search_ticker_view(ticker: str, user: User = Depends(get_authenticated_user)):
+    result = await search_ticker(ticker)
+    return [i.dict() for i in result]
