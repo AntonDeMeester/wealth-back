@@ -24,6 +24,14 @@ class AlphaVantageApi(BaseApi):
         ]
         return ticker_obj
 
+    async def update_ticker_history(self, ticker: StockTicker) -> StockTicker:
+        data = await self._get_ticker_history(ticker.symbol)
+        ticker.rates = [
+            StockTickerItem(date=key, price=value.adjusted_close)  # type: ignore[arg-type]
+            for key, value in data.time_series.__root__.items()
+        ]
+        return ticker
+
     async def search_ticker(self, ticker: str) -> SearchResponse:
         params = {"keywords": ticker, "function": FUNCTION_SEARCH}
         response = await self._execute_request(params)

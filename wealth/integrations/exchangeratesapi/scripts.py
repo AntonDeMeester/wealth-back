@@ -1,5 +1,6 @@
 import asyncio
 import io
+import logging
 from csv import DictReader
 from tempfile import TemporaryFile
 from zipfile import ZipFile
@@ -8,7 +9,11 @@ import httpx
 
 from wealth.database.api import engine
 from wealth.database.models import ExchangeRate, ExchangeRateItem
+from wealth.logging import set_up_logging
 from wealth.parameters.constants import Currency
+
+set_up_logging()
+LOGGER = logging.getLogger(__name__)
 
 EXCHANGE_RATE_FILE_LINK = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip?82ca7247ec0cc917410599e2c56dbbdd"
 NA = "N/A"
@@ -20,6 +25,7 @@ async def import_from_ecb():
     Data can be loaded here:
     https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
     """
+    LOGGER.info("Starting to get the new exchange rates from the ECB")
     response = httpx.get("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip")
     if response.is_error:
         raise ValueError(f"Could not retrieve the history from the ECB. Git a {response.status_code} with {response.text}")
@@ -56,6 +62,7 @@ async def import_from_ecb():
                 parsed.rates.append(ExchangeRateItem(date=date, rate=float(conversion_rate)))
 
     await engine.save_all(parsed_rates)
+    LOGGER.info("Done with the get the new exchange rates from the ECB")
 
 
 if __name__ == "__main__":

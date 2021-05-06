@@ -81,6 +81,6 @@ async def get_balances(user: User = Depends(get_authenticated_user)):
 
 
 @router.get("/search/{ticker}", response_model=list[SearchItem], response_model_by_alias=False)
-async def search_ticker_view(ticker: str, user: User = Depends(get_authenticated_user)):
+async def search_ticker_view(ticker: str, _: User = Depends(get_authenticated_user)):
     result = await search_ticker(ticker)
     return [i.dict() for i in result]

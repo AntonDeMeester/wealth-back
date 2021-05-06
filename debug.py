@@ -4,6 +4,7 @@ from wealth.database.api import engine
 from wealth.database.models import StockPosition
 from wealth.integrations.alphavantage.api import AlphaVantageApi
 from wealth.integrations.exchangeratesapi.scripts import import_from_ecb
+from wealth.scripts import run_daily_scripts
 from wealth.stocks import logic
 
 
@@ -15,7 +16,8 @@ async def create_stock_ticker():
 
 async def main():
     # await create_stock_ticker()
-    await import_from_ecb()
+    # await import_from_ecb()
+    await run_daily_scripts()
 
 
 if __name__ == "__main__":
