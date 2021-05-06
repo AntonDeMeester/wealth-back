@@ -8,10 +8,10 @@ from fastapi.responses import JSONResponse
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
-from .authentication.openapi import create_custom_api
 from .logging import set_up_logging
 from .parameters import env
 from .routers import router
+from .util.openapi import create_custom_api
 
 set_up_logging()
 

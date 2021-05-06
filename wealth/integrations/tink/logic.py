@@ -2,8 +2,11 @@ import asyncio
 import logging
 from typing import List, Optional
 
+from dateutil.parser import parser
+
 from wealth.database.api import engine
 from wealth.database.models import Account, AccountSource, User, WealthItem
+from wealth.integrations.exchangeratesapi.dependency import Exchanger
 from wealth.integrations.tink.api import TinkApi, TinkLinkApi, TinkServerApi
 from wealth.integrations.tink.exceptions import TinkRuntimeException
 from wealth.parameters.constants import Currency
@@ -13,6 +16,9 @@ from .types import QueryRequest, Resolution, StatisticsRequest, StatisticType
 from .utils import generate_dates_from_today, generate_user_hint
 
 LOGGER = logging.getLogger(__name__)
+
+rates = Exchanger()
+date_parser = parser()
 
 
 class TinkLogic:
@@ -87,6 +93,7 @@ class TinkLogic:
             WealthItem(
                 date=item.period,  # type: ignore[arg-type]
                 amount=item.value,
+                amount_in_euro=item.value,
                 currency=Currency("EUR"),
                 raw=item.json(),
             )
@@ -110,6 +117,7 @@ class TinkLogic:
             WealthItem(
                 date=item.period,  # type: ignore[arg-type]
                 amount=item.value,
+                amount_in_euro=await rates.convert_to_euros_on_date(item.value, Currency(account.currency), item.period),
                 currency=Currency(account.currency),
                 raw=item.json(),
             )

@@ -23,3 +23,6 @@ class TickerNotFoundException(AlphaVantageException):
     def __init__(self, ticker: str, detail=""):
         super().__init__(detail=detail)
         self.ticker = ticker
+
+    def __str__(self) -> str:
+        return f"Could not find ticker '{self.ticker}' in AlphaVantage"

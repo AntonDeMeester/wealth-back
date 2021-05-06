@@ -4,6 +4,7 @@ from wealth.authentication import get_authenticated_user
 from wealth.database.api import engine
 from wealth.database.models import StockPosition as DBStockPosition
 from wealth.database.models import User
+from wealth.database.models import WealthItem as WealthItemDB
 from wealth.integrations.alphavantage.exceptions import TickerNotFoundException
 from wealth.util.exceptions import NotFoundException
 
@@ -69,14 +70,14 @@ async def get_position_balances(position_id: str, user: User = Depends(get_authe
     db_position = user.find_stock_position(position_id)
     if db_position is None:
         raise NotFoundException()
-    return [await WealthItem.parse_obj_async(b) for b in db_position.balances]
+    return db_position.balances
 
 
 @router.get("/balances", response_model=list[WealthItem])
 async def get_balances(user: User = Depends(get_authenticated_user)):
-    balances: list[WealthItem] = []
+    balances: list[WealthItemDB] = []
     for p in user.stock_positions:
-        balances += [await WealthItem.parse_obj_async(b) for b in p.balances]
+        balances += p.balances
     return balances
 
 

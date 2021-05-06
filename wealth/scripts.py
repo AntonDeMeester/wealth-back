@@ -12,7 +12,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def run_daily_scripts():
-    scripts = [import_from_ecb, update_all_tickers, update_all_stock_balances, update_tink_for_all_users]
+    scripts = [
+        import_from_ecb,
+        update_all_tickers,
+        update_all_stock_balances,
+        update_tink_for_all_users,
+    ]
     for function in scripts:
         try:
             await function()

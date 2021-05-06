@@ -10,7 +10,10 @@ router = APIRouter()
 
 @router.get("/balances", response_model=list[WealthItem])
 async def get_balances(user: User = Depends(get_authenticated_user)):
-    return [await WealthItem.parse_obj_async(b) for b in user.balances]
+    balances = []
+    for account in user.accounts:
+        balances += account.balances
+    return balances
 
 
 @router.get("/accounts", response_model=list[Account])
@@ -28,4 +31,4 @@ async def get_account_balances(account_id: str, user: User = Depends(get_authent
     account = user.find_account(account_id)
     if not account:
         return []
-    return [await WealthItem.parse_obj_async(b) for b in account.balances]
+    return account.balances

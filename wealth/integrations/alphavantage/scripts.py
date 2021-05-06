@@ -1,5 +1,4 @@
 import logging
-import symbol
 import time
 
 from pyparsing import Optional

@@ -1,5 +1,4 @@
 import uuid
-from unittest.mock import patch
 
 import httpx
 import pytest
@@ -8,19 +7,6 @@ from fastapi.encoders import jsonable_encoder
 
 from tests.database.factory import generate_account, generate_user, generate_wealth_item
 from wealth.authentication import get_authenticated_user
-from wealth.banking.types import WealthItem
-from wealth.integrations.exchangeratesapi.dependency import Exchanger
-
-
-class TestWealthItem:
-    @pytest.mark.asyncio
-    async def test_calculate_amount_in_euros(self):
-        converted_amount = 200
-        wealth_item_data = generate_wealth_item(amount_in_euros=500, _raw=True)
-        with patch.object(Exchanger, "convert_to_euros_on_date", return_value=converted_amount):
-            item = await WealthItem.parse_obj_async(wealth_item_data)
-
-        assert item.amount_in_euro == converted_amount
 
 
 class TestBankingViews:

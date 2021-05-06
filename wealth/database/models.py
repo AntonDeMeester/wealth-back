@@ -14,6 +14,7 @@ from wealth.util.validators import convert_datetime
 class WealthItem(EmbeddedModel):
     date: datetime
     amount: float
+    amount_in_euro: float = 0
     currency: Currency
     raw: str = ""
 
