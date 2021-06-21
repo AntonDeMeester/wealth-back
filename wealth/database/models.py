@@ -28,6 +28,7 @@ class WealthItem(EmbeddedModel):
 class Account(EmbeddedModel):
     account_id: UUID = Field(default_factory=uuid4)
     name: str = ""
+    is_active: bool = True
 
     source: AccountSource
     external_id: str
@@ -83,6 +84,8 @@ class User(Model):
     def balances(self) -> List[WealthItem]:
         balances = []
         for a in self.accounts:
+            if a.is_active is False:
+                continue
             balances += a.balances
         for s in self.stock_positions:
             balances += s.balances
