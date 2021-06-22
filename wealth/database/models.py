@@ -37,6 +37,7 @@ class Account(EmbeddedModel):
     currency: str
     type: str
     bank: str = ""
+    bank_alias: str = ""
 
     balances: List[WealthItem] = []
 

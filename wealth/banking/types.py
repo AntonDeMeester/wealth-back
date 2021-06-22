@@ -18,6 +18,7 @@ class WealthItem(BaseModel):
 class UpdateAccountRequest(BaseModel):
     is_active: Optional[bool]
     name: Optional[str]
+    bank_alias: Optional[str]
 
 
 class UpdateAccountResponse(BaseModel):
@@ -32,3 +33,4 @@ class UpdateAccountResponse(BaseModel):
     currency: str
     type: str
     bank: str = ""
+    bankAlias: str = ""

@@ -14,6 +14,8 @@ router = APIRouter()
 async def get_balances(user: User = Depends(get_authenticated_user)):
     balances = []
     for account in user.accounts:
+        if not account.is_active:
+            continue
         balances += account.balances
     return balances
 
