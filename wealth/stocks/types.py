@@ -31,6 +31,9 @@ class StockPositionResponse(BaseModel):
     start_date: date
     ticker: str
 
+    current_value: float
+    current_value_in_euro: float
+
 
 class SearchItem(BaseModel):
     ticker: str = Field(..., alias="symbol")

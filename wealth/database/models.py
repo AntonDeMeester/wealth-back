@@ -55,6 +55,18 @@ class StockPosition(EmbeddedModel):
     ticker: str
     balances: List[WealthItem] = []
 
+    @property
+    def current_value(self) -> float:
+        if not self.balances:
+            return 0
+        return self.balances[-1].amount
+
+    @property
+    def current_value_in_euro(self) -> float:
+        if not self.balances:
+            return 0
+        return self.balances[-1].amount_in_euro
+
     @validator("start_date", pre=True)
     # pylint: disable=no-self-argument,no-self-use
     def convert_date(cls, v):

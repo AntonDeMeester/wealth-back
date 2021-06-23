@@ -16,7 +16,14 @@ router = APIRouter()
 
 @router.get("/positions", response_model=list[StockPositionResponse])
 async def get_positions(user: User = Depends(get_authenticated_user)):
-    return user.stock_positions
+    all_positions = user.stock_positions
+    serialized_positions: list[dict] = []
+    for db_position in all_positions:
+        serialized = db_position.dict()
+        serialized["current_value"] = db_position.current_value
+        serialized["current_value_in_euro"] = db_position.current_value_in_euro
+        serialized_positions.append(serialized)
+    return serialized_positions
 
 
 @router.get("/positions/{position_id}", response_model=StockPositionResponse)
@@ -24,7 +31,10 @@ async def get_position(position_id: str, user: User = Depends(get_authenticated_
     position = user.find_stock_position(position_id)
     if position is None:
         raise NotFoundException()
-    return position
+    serialized = position.dict()
+    serialized["current_value"] = position.current_value
+    serialized["current_value_in_euro"] = position.current_value_in_euro
+    return serialized
 
 
 @router.post("/positions", response_model=StockPositionResponse, status_code=status.HTTP_201_CREATED)
@@ -36,7 +46,10 @@ async def create_position(position: StockPositionRequest, user: User = Depends(g
         raise HTTPException(422, {"ticker": f"Ticker symbol not found ({e.ticker})"})  # pylint: disable=raise-missing-from
     user.stock_positions.append(db_position)
     await engine.save(user)
-    return db_position
+    serialized = db_position.dict()
+    serialized["current_value"] = db_position.current_value
+    serialized["current_value_in_euro"] = db_position.current_value_in_euro
+    return serialized
 
 
 @router.patch("/positions/{position_id}", response_model=StockPositionResponse)
@@ -53,7 +66,10 @@ async def update_position(
             setattr(db_position, key, value)
     db_position.balances = await populate_stock_balances(db_position)
     await engine.save(user)
-    return db_position
+    serialized = db_position.dict()
+    serialized["current_value"] = db_position.current_value
+    serialized["current_value_in_euro"] = db_position.current_value_in_euro
+    return serialized
 
 
 @router.delete("/positions/{position_id}")
