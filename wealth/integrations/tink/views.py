@@ -28,9 +28,9 @@ async def tink_callback(data: TinkCallbackRequest, user: User = Depends(get_auth
     return response
 
 
-@router.post("/bank")
+@router.get("/bank")
 async def tink_callback_authorize(
-    data: TinkLinkAddBankRequest, user: User = Depends(get_authenticated_user)
+    market: str = "SE", test: bool = False, user: User = Depends(get_authenticated_user)
 ) -> TinkLinkRedirectResponse:
     """
     Returns the TinkLink URL to add a bank
@@ -39,17 +39,15 @@ async def tink_callback_authorize(
     Returns the Tink Link URL
     """
     async with TinkLogic() as tink_logic:
-        url = await tink_logic.get_url_to_add_bank_for_tink_user(user, data.market, data.test)
+        url = await tink_logic.get_url_to_add_bank_for_tink_user(user, market, test)
     return TinkLinkRedirectResponse(url=url)
 
 
-@router.post("/refresh")
+@router.get("/refresh")
 async def tink_callback_refresh(user: User = Depends(get_authenticated_user)):
     """
     Returns the TinkLink URL to add a bank
-    If there is no Tink User yet for the account, this will also create the user
-
-    Returns the Tink Link URL
+    The Tink User ID needs to exist.
     """
     async with TinkLogic() as tink_logic:
         await tink_logic.refresh_user_from_backend(user)

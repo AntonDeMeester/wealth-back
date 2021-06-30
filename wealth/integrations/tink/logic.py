@@ -180,7 +180,7 @@ class TinkLogic:
         Return the redirect URL to TinkLink to be used
         """
         if not user.tink_user_id:
-            raise TinkRuntimeException("A tink user needs to be created to refresh it from the backend")
+            user = await self.create_tink_user(user)
 
         client_hint = generate_user_hint(user)
         auth_code = await self.server.get_authorization_code(user.tink_user_id, client_hint)
@@ -209,7 +209,7 @@ class TinkLogic:
     async def update_all_accounts(self, user: User) -> User:
         new_accounts = await self.get_accounts()
         # Add new accounts, and remove stale account information
-        user.accounts = new_accounts + [account for account in user.accounts if account not in new_accounts]
+        user.accounts = user.accounts + [account for account in new_accounts if account not in user.accounts]
 
         new_balances_list = await asyncio.gather(*[self.get_wealth_items_for_account(account) for account in new_accounts])
         for account, new_balances in zip(new_accounts, new_balances_list):
@@ -234,6 +234,8 @@ class TinkLogic:
         """
         LOGGER.info("Executing callback logic for Tink: Getting accounts, and fetching all balances")
         await self.initialise_tink_api(code)
+        if not user.tink_user_id:
+            user = await self.create_tink_user(user)
         user = await self.update_all_accounts(user)
         return user
 
