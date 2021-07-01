@@ -180,23 +180,22 @@ class TestTinkLogic:
 
         assert result == return_url
 
-    @pytest.skip
-    @pytest.mark.asyncio
-    async def test_get_url_to_add_bank_for_tink_user_no_tink_user(self):
-        user = generate_user(
-            first_name="fn",
-            last_name="ln",
-            market="SE",
-            locale="en_GB",
-        )
-        market = "not-default"
-        test = True
+    # @pytest.mark.asyncio
+    # async def test_get_url_to_add_bank_for_tink_user_no_tink_user(self):
+    #     user = generate_user(
+    #         first_name="fn",
+    #         last_name="ln",
+    #         market="SE",
+    #         locale="en_GB",
+    #     )
+    #     market = "not-default"
+    #     test = True
 
-        async with TinkLogic() as logic:
-            with pytest.raises(TinkRuntimeException) as exc:
-                await logic.get_url_to_add_bank_for_tink_user(user, market, test)
+    #     async with TinkLogic() as logic:
+    #         with pytest.raises(TinkRuntimeException) as exc:
+    #             await logic.get_url_to_add_bank_for_tink_user(user, market, test)
 
-        assert "tink user" in str(exc)
+    #     assert "tink user" in str(exc)
 
     @pytest.mark.asyncio
     async def test_get_url_to_initiate_refresh_credentials(self):
