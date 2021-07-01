@@ -33,4 +33,4 @@ class UpdateAccountResponse(BaseModel):
     currency: str
     type: str
     bank: str = ""
-    bankAlias: str = ""
+    bank_alias: str = ""

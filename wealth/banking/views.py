@@ -20,12 +20,12 @@ async def get_balances(user: User = Depends(get_authenticated_user)):
     return balances
 
 
-@router.get("/accounts", response_model=list[Account])
+@router.get("/accounts", response_model=list[UpdateAccountResponse])
 async def get_accounts(user: User = Depends(get_authenticated_user)):
     return user.accounts
 
 
-@router.get("/accounts/{account_id}", response_model=Account)
+@router.get("/accounts/{account_id}", response_model=UpdateAccountResponse)
 async def get_account(account_id: str, user: User = Depends(get_authenticated_user)):
     return user.find_account(account_id)
 
