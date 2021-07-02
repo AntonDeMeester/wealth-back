@@ -208,12 +208,14 @@ class TinkLogic:
 
     async def update_all_accounts(self, user: User) -> User:
         new_accounts = await self.get_accounts()
-        # Add new accounts, and remove stale account information
-        user.accounts = user.accounts + [account for account in new_accounts if account not in user.accounts]
 
-        new_balances_list = await asyncio.gather(*[self.get_wealth_items_for_account(account) for account in new_accounts])
+        new_balances_list = [await self.get_wealth_items_for_account(account) for account in new_accounts]
         for account, new_balances in zip(new_accounts, new_balances_list):
-            account.balances = new_balances
+            for existing_account in user.accounts:
+                if account == existing_account:
+                    existing_account.balances = new_balances
+            else:
+                user.accounts.append(account)
 
         await engine.save(user)
         return user
