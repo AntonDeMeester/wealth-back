@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 
 from tests.database.factory import generate_account, generate_user, generate_wealth_item
 from wealth.authentication import get_authenticated_user
+from wealth.banking.types import UpdateAccountResponse
 
 
 class TestBankingViews:
@@ -47,7 +48,7 @@ class TestBankingViews:
 
         assert response.status_code == 200
         data = response.json()
-        assert data == [jsonable_encoder(acc.doc()) for acc in accounts]
+        assert data == [jsonable_encoder(acc.doc(include=UpdateAccountResponse.__fields__.keys())) for acc in accounts]
 
     @pytest.mark.asyncio
     async def test_get_accounts_not_auth(self, app_fixture: FastAPI):
@@ -71,7 +72,7 @@ class TestBankingViews:
 
         assert response.status_code == 200
         data = response.json()
-        assert data == jsonable_encoder(one_account.doc())
+        assert data == jsonable_encoder(one_account.doc(include=UpdateAccountResponse.__fields__.keys()))
 
     @pytest.mark.asyncio
     async def test_get_account_not_auth(self, app_fixture: FastAPI):

@@ -214,7 +214,9 @@ class TinkLogic:
             for existing_account in user.accounts:
                 if account == existing_account:
                     existing_account.balances = new_balances
+                    break
             else:
+                account.balances = new_balances
                 user.accounts.append(account)
 
         await engine.save(user)
