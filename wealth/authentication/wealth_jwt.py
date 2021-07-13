@@ -16,7 +16,7 @@ class WealthJwt(AuthJWT):
         user_id = self.get_jwt_subject()
         if user_id is None:
             return None
-        user = await engine.find_one(User, User.email == user_id)
+        user = await engine.get_user_by_email(user_id)
         return user
 
     async def get_authenticated_jwt_user(self) -> User:

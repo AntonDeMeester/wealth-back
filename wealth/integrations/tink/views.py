@@ -5,7 +5,7 @@ from wealth.database.models import User
 
 from .api import TinkLinkApi
 from .logic import TinkLogic
-from .types import TinkCallbackRequest, TinkCallbackResponse, TinkLinkAddBankRequest, TinkLinkRedirectResponse
+from .types import TinkCallbackRequest, TinkCallbackResponse, TinkLinkRedirectResponse
 
 router = APIRouter()
 
