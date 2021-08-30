@@ -2,5 +2,11 @@ infra:
   vpc_name: wealth-staging
 cors:
   - https://web.illuminatus.be
+  - http://localhost
+  - http://localhost:3000
+  - http://localhost:8100
+  - http://127.0.0.1
+  - http://127.0.0.1:3000
+  - http://127.0.0.1:8100
 frontend:
   url: "https://web.illuminatus.be"
