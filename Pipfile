@@ -16,6 +16,8 @@ pre-commit = "*"
 pymongo-inmemory = "*"
 pytest-asyncio = "*"
 pytest-httpx = "*"
+setupextras = "*"
+types-python-dateutil = "*"
 
 [packages]
 fastapi = "*"
