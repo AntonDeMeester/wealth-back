@@ -144,3 +144,5 @@ local
 
 # CDK files
 cdk.out
+
+.python-version
