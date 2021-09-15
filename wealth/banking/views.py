@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 
 from wealth.authentication import get_authenticated_user
 from wealth.database.api import engine
-from wealth.database.models import Account, User
+from wealth.database.models import User
 from wealth.util.exceptions import NotFoundException
 
 from .types import UpdateAccountRequest, UpdateAccountResponse, WealthItem

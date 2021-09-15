@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import List, Optional, Sequence
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -12,21 +14,35 @@ from .models import User
 client = AsyncIOMotorClient(env.MONGO_URL, uuidRepresentation="standard")
 
 
+@dataclass
+class CacheEntry:
+    user: User
+    time_updated: datetime
+
+
 class WealthEngine(AIOEngine):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._cache: dict[str, User] = {}
+        self._cache: dict[str, CacheEntry] = {}
+
+    def _get_from_cache(self, email: str) -> Optional[User]:
+        if email not in self._cache:
+            return None
+        cached_item = self._cache[email]
+        if cached_item.time_updated < datetime.now() - timedelta(hours=4):
+            return None
+        return cached_item.user
 
     def _set_cache(self, email: str, user: Optional[User]):
         if user is not None:
-            self._cache[email] = user
+            self._cache[email] = CacheEntry(user=user, time_updated=datetime.now())
 
     def reset_cache(self):
         self._cache = {}
 
     async def get_user_by_email(self, email: str) -> Optional[User]:
-        if email in self._cache:
-            return self._cache[email]
+        if cached_user := self._get_from_cache(email):
+            return cached_user
         user = await self.find_one(User, User.email == email)
         self._set_cache(email, user)
         return user

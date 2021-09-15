@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from wealth.authentication.wealth_jwt import get_authenticated_user
 from wealth.database.models import User
+from wealth.integrations.tink.exceptions import TinkApiException
 
 from .api import TinkLinkApi
 from .logic import TinkLogic
@@ -19,12 +20,15 @@ async def tink_callback(data: TinkCallbackRequest, user: User = Depends(get_auth
     Returns nothing
     """
     async with TinkLogic() as tink_logic:
-        if data.code:
-            await tink_logic.execute_callback_for_authorize(data.code, user)
-            response = TinkCallbackResponse()
-        else:
-            await tink_logic.execute_callback_for_add_credentials(data.credentials_id, user)
-            response = TinkCallbackResponse(credentials_id=data.credentials_id)
+        try:
+            if data.code:
+                await tink_logic.execute_callback_for_authorize(data.code, user)
+                response = TinkCallbackResponse()
+            else:
+                await tink_logic.execute_callback_for_add_credentials(data.credentials_id, user)
+                response = TinkCallbackResponse(credentials_id=data.credentials_id)
+        except TinkApiException:
+            raise HTTPException(401, {"error": "Tink code not valid"})
     return response
 
 
