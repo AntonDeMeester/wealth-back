@@ -8,5 +8,6 @@ cors:
   - http://127.0.0.1
   - http://127.0.0.1:3000
   - http://127.0.0.1:8100
+  - https://3000-indigo-junglefowl-z05m4bv2.ws-eu15.gitpod.io
 frontend:
   url: "https://web.illuminatus.be"

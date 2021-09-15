@@ -6,4 +6,6 @@ infra:
     lambda:
         env:
 region: eu-west-1
+frontend:
+  url: "http://localhost:3000"
 cors: []
