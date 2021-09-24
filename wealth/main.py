@@ -3,6 +3,7 @@ import uvicorn  # type: ignore
 from config2.config import config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from fastapi_jwt_auth.exceptions import AuthJWTException
@@ -27,6 +28,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware)
 if env.SENTRY_DSN:
     sentry_sdk.init(dsn=env.SENTRY_DSN)
     app.add_middleware(SentryAsgiMiddleware)
