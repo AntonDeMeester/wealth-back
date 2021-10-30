@@ -35,7 +35,7 @@ if env.SENTRY_DSN:
 @app.exception_handler(AuthJWTException)
 # pylint: disable=unused-argument
 def authjwt_exception_handler(request: Request, exc: AuthJWTException):
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message, "error_type": "authentication"})
 
 
 if __name__ == "__main__":
