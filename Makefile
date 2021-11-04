@@ -1,6 +1,8 @@
 PYTHON_FOLDERS := wealth tests
 
 check:
+	isort --check-only  ${PYTHON_FOLDERS}
+	black --check  ${PYTHON_FOLDERS}
 	mypy ${PYTHON_FOLDERS}
 	pylint  ${PYTHON_FOLDERS} --fail-under 9
 	radon cc  ${PYTHON_FOLDERS} -a -nc
@@ -8,10 +10,6 @@ check:
 reformat:
 	isort  ${PYTHON_FOLDERS}
 	black  ${PYTHON_FOLDERS}
-
-check-reformat:
-	isort --check-only  ${PYTHON_FOLDERS}
-	black --check  ${PYTHON_FOLDERS}
 
 test:
 	pytest --cov=wealth --cov-report term --cov-report html:coverage\/cov_html  --cov-report xml:coverage\/coverage.xml tests

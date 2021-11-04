@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import List, Optional, Union
+from typing import List, Optional, Protocol, Union
 from uuid import UUID, uuid4
 
 from odmantic import EmbeddedModel, Field, Model
@@ -24,36 +24,23 @@ class WealthItem(EmbeddedModel):
         return convert_datetime(v)
 
 
-# pylint: disable=abstract-method
-class Account(EmbeddedModel):
-    account_id: UUID = Field(default_factory=uuid4)
-    name: str = ""
-    is_active: bool = True
+class AssetClass(Protocol):
+    asset_id: UUID
+    currency: Currency
 
-    source: AccountSource
-    external_id: str
-    account_number: str
+    balances: list[WealthItem]
 
-    currency: str
-    type: str
-    bank: str = ""
-    bank_alias: str = ""
+    @property
+    def current_value(self) -> float:
+        ...
 
-    balances: List[WealthItem] = []
-
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-
-        return self.external_id == other.external_id and self.source == other.source
+    @property
+    def current_value_in_euro(self) -> float:
+        ...
 
 
-class StockPosition(EmbeddedModel):
-    position_id: UUID = Field(default_factory=uuid4)
-    amount: float
-    start_date: datetime
-    ticker: str
-    balances: List[WealthItem] = []
+class AssetClassMethods:
+    balances: list[WealthItem]
 
     @property
     def current_value(self) -> float:
@@ -67,10 +54,70 @@ class StockPosition(EmbeddedModel):
             return 0
         return self.balances[-1].amount_in_euro
 
+
+# pylint: disable=abstract-method
+class Account(AssetClassMethods, EmbeddedModel):
+    asset_id: UUID = Field(default_factory=uuid4)
+    account_id: UUID = Field(default_factory=uuid4)
+
+    name: str = ""
+    is_active: bool = True
+    currency: Currency = Currency.EUR
+
+    source: AccountSource
+    external_id: str
+    account_number: str
+
+    type: str
+    bank: str = ""
+    bank_alias: str = ""
+
+    balances: List[WealthItem] = []
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+
+        return self.external_id == other.external_id and self.source == other.source
+
+
+class StockPosition(AssetClassMethods, EmbeddedModel):
+    asset_id: UUID = Field(default_factory=uuid4)
+    position_id: UUID = Field(default_factory=uuid4)
+
+    amount: float
+    currency: Currency = Currency.EUR
+    start_date: datetime
+    ticker: str
+
+    balances: List[WealthItem] = []
+
     @validator("start_date", pre=True)
     # pylint: disable=no-self-argument,no-self-use
     def convert_date(cls, v):
         return convert_datetime(v)
+
+
+class AssetEvent(EmbeddedModel):
+    date: datetime
+    amount: float
+
+
+class CustomAsset(AssetClassMethods, EmbeddedModel):
+    asset_id: UUID = Field(default_factory=uuid4)
+    currency: Currency = Currency.EUR
+    description: str = ""
+
+    events: List[AssetEvent] = []
+    balances: List[WealthItem] = []
+
+    def find_event(self, event_date: date) -> Optional[AssetEvent]:
+        matching_events = [e for e in self.events if e.date.day == event_date]
+        if not matching_events:
+            return None
+        if len(matching_events) > 1:
+            raise ValueError(f"Found more than one asset event on the same day: {self.asset_id=} {event_date=}")
+        return matching_events[0]
 
 
 # pylint: disable=abstract-method
@@ -85,23 +132,28 @@ class User(Model):
     market: str = "SE"
     locale: str = "en_US"
 
-    # Wealth data
+    # Asset classes
     accounts: List[Account] = []
     stock_positions: List[StockPosition] = []
+    custom_assets: List[CustomAsset] = []
 
     # Tink stuff
     tink_user_id: str = ""
     tink_credentials: List[str] = []
 
     @property
+    def assets(self) -> List[AssetClass]:
+        assets: List[AssetClass] = []
+        assets += self.stock_positions
+        assets += self.custom_assets
+        assets += [b for b in self.accounts if b.is_active]
+        return assets
+
+    @property
     def balances(self) -> List[WealthItem]:
         balances = []
-        for a in self.accounts:
-            if a.is_active is False:
-                continue
-            balances += a.balances
-        for s in self.stock_positions:
-            balances += s.balances
+        for asset in self.assets:
+            balances += asset.balances
         return balances
 
     def find_account(self, account_id: Union[UUID, str]) -> Optional[Account]:
@@ -119,6 +171,14 @@ class User(Model):
         if len(positions) > 1:
             raise ValueError(f"Found more than one account with account_id {position_id}")
         return positions[0]
+
+    def find_custom_asset(self, asset_id: Union[UUID, str]) -> Optional[CustomAsset]:
+        asset = [p for p in self.custom_assets if str(p.asset_id) == str(asset_id)]
+        if not asset:
+            return None
+        if len(asset) > 1:
+            raise ValueError(f"Found more than one account with account_id {asset_id}")
+        return asset[0]
 
 
 class ExchangeRateItem(EmbeddedModel):

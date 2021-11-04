@@ -18,6 +18,7 @@ pytest-asyncio = "*"
 pytest-httpx = "*"
 setupextras = "*"
 types-python-dateutil = "*"
+time-machine = "*"
 
 [packages]
 fastapi = "*"
@@ -33,6 +34,7 @@ pymongo = {extras = ["srv"], version = "*"}
 python-dateutil = "*"
 nest-asyncio = "*"
 sentry-sdk = "*"
+time-machine = "*"
 
 [requires]
 python_version = "3.9"

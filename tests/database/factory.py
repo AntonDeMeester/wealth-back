@@ -4,7 +4,7 @@ from odmantic import ObjectId
 
 from tests.factory import SpecialCaseDict, database_model_generator
 from wealth.authentication.passwords import encode_password
-from wealth.database.models import Account, User, WealthItem
+from wealth.database.models import Account, CustomAsset, User, WealthItem
 from wealth.parameters.constants import Currency
 from wealth.parameters.general import AccountSource
 
@@ -20,6 +20,7 @@ generate_user = database_model_generator(User, _user_defaults, _user_special_cas
 
 
 _account_defaults = {
+    "asset_id": uuid.uuid4(),
     "account_id": uuid.uuid4(),
     "source": AccountSource.tink,
     "external_id": "some-id",
@@ -38,3 +39,10 @@ _wealth_item_defaults = {
     "currency": Currency.EUR,
 }
 generate_wealth_item = database_model_generator(WealthItem, _wealth_item_defaults)
+
+_custom_assets_defaults = {
+    "asset_id": uuid.uuid4(),
+    "currency": Currency.EUR,
+    "description": "description-1",
+}
+generate_custom_asset = database_model_generator(CustomAsset, _custom_assets_defaults)

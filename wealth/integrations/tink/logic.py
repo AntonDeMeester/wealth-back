@@ -134,7 +134,7 @@ class TinkLogic:
             Account(
                 source=AccountSource.tink,
                 external_id=item.id,
-                currency=item.currencyDenominatedBalance.currencyCode,
+                currency=Currency(item.currencyDenominatedBalance.currencyCode),
                 account_number=item.accountNumber,
                 bank=item.financialInstitutionId,
                 type=item.type,
