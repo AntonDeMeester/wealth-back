@@ -1,5 +1,6 @@
 from datetime import date
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, validator
 
@@ -32,6 +33,7 @@ class UpdateCustomAssetRequest(BaseModel):
 
 
 class CustomAssetResponse(BaseModel):
+    asset_id: UUID
     currency: Currency = Currency.EUR
     description: str
     current_value: float
