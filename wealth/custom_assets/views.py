@@ -28,17 +28,17 @@ async def get_balances(user: User = Depends(get_authenticated_user)):
     return balances
 
 
-@router.get("/custom-assets", response_model=list[CustomAssetResponse])
+@router.get("/assets", response_model=list[CustomAssetResponse])
 async def get_accounts(user: User = Depends(get_authenticated_user)):
     return user.accounts
 
 
-@router.get("/custom-assets/{asset_id}", response_model=CustomAssetResponse)
+@router.get("/assets/{asset_id}", response_model=CustomAssetResponse)
 async def get_account(asset_id: str, user: User = Depends(get_authenticated_user)):
     return user.find_account(asset_id)
 
 
-@router.post("/custom-assets/", response_model=CustomAssetResponse)
+@router.post("/assets/", response_model=CustomAssetResponse)
 async def create_custom_asset(asset: CreateCustomAssetRequest, user: User = Depends(get_authenticated_user)):
     asset_dict = asset.dict()
     event = DBAssetEvent(date=asset_dict.pop("asset_date"), amount=asset_dict.pop("amount"))
@@ -53,7 +53,7 @@ async def create_custom_asset(asset: CreateCustomAssetRequest, user: User = Depe
     return serialized
 
 
-@router.patch("/custom-assets/{asset_id}", response_model=CustomAssetResponse)
+@router.patch("/assets/{asset_id}", response_model=CustomAssetResponse)
 async def update_custom_asset(
     asset_id: str, updated_asset: UpdateCustomAssetRequest, user: User = Depends(get_authenticated_user)
 ):
@@ -69,7 +69,7 @@ async def update_custom_asset(
     return db_asset
 
 
-@router.put("/custom-assets/{asset_id}/events", response_model=AssetEventResponse)
+@router.put("/assets/{asset_id}/events", response_model=AssetEventResponse)
 async def put_event(asset_id: str, event: AssetEventRequest, user: User = Depends(get_authenticated_user)):
     db_asset = user.find_custom_asset(asset_id)
     if db_asset is None:
@@ -88,7 +88,7 @@ async def put_event(asset_id: str, event: AssetEventRequest, user: User = Depend
     return matching_event
 
 
-@router.get("/custom-assets/{asset_id}/balances", response_model=list[WealthItem])
+@router.get("/assets/{asset_id}/balances", response_model=list[WealthItem])
 async def get_account_balances(asset_id: str, user: User = Depends(get_authenticated_user)):
     account = user.find_account(asset_id)
     if not account:
