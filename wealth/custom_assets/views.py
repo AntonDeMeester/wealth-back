@@ -38,7 +38,7 @@ async def get_asset(asset_id: str, user: User = Depends(get_authenticated_user))
     return user.find_custom_asset(asset_id)
 
 
-@router.post("/assets/", response_model=CustomAssetResponse)
+@router.post("/assets", response_model=CustomAssetResponse)
 async def create_custom_asset(asset: CreateCustomAssetRequest, user: User = Depends(get_authenticated_user)):
     asset_dict = asset.dict()
     event = DBAssetEvent(date=asset_dict.pop("asset_date"), amount=asset_dict.pop("amount"))

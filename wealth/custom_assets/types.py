@@ -21,7 +21,9 @@ class CreateCustomAssetRequest(BaseModel):
 
     @validator("asset_date")
     def asset_date_in_the_past(cls, value):  # pylint: disable=no-self-argument
-        return value <= date.today()
+        if value > date.today():
+            raise ValueError("Date must be in the past")
+        return value
 
 
 class UpdateCustomAssetRequest(BaseModel):
