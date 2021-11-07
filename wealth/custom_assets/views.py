@@ -30,12 +30,25 @@ async def get_balances(user: User = Depends(get_authenticated_user)):
 
 @router.get("/assets", response_model=list[CustomAssetResponse])
 async def get_assets(user: User = Depends(get_authenticated_user)):
-    return user.custom_assets
+    all_assets = user.custom_assets
+    serialized_assets: list[dict] = []
+    for db_asset in all_assets:
+        serialized = db_asset.dict()
+        serialized["current_value"] = db_asset.current_value
+        serialized["current_value_in_euro"] = db_asset.current_value_in_euro
+        serialized_assets.append(serialized)
+    return serialized_assets
 
 
 @router.get("/assets/{asset_id}", response_model=CustomAssetResponse)
 async def get_asset(asset_id: str, user: User = Depends(get_authenticated_user)):
-    return user.find_custom_asset(asset_id)
+    db_asset = user.find_custom_asset(asset_id)
+    if db_asset is None:
+        raise NotFoundException()
+    serialized = db_asset.dict()
+    serialized["current_value"] = db_asset.current_value
+    serialized["current_value_in_euro"] = db_asset.current_value_in_euro
+    return serialized
 
 
 @router.post("/assets", response_model=CustomAssetResponse)
