@@ -102,6 +102,11 @@ class AssetEvent(EmbeddedModel):
     date: datetime
     amount: float
 
+    @validator("date", pre=True)
+    # pylint: disable=no-self-argument,no-self-use
+    def convert_date(cls, v):
+        return convert_datetime(v)
+
 
 class CustomAsset(AssetClassMethods, EmbeddedModel):
     asset_id: UUID = Field(default_factory=uuid4)
