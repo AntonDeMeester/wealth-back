@@ -29,13 +29,13 @@ async def get_balances(user: User = Depends(get_authenticated_user)):
 
 
 @router.get("/assets", response_model=list[CustomAssetResponse])
-async def get_accounts(user: User = Depends(get_authenticated_user)):
-    return user.accounts
+async def get_assets(user: User = Depends(get_authenticated_user)):
+    return user.custom_assets
 
 
 @router.get("/assets/{asset_id}", response_model=CustomAssetResponse)
-async def get_account(asset_id: str, user: User = Depends(get_authenticated_user)):
-    return user.find_account(asset_id)
+async def get_asset(asset_id: str, user: User = Depends(get_authenticated_user)):
+    return user.find_custom_asset(asset_id)
 
 
 @router.post("/assets/", response_model=CustomAssetResponse)
