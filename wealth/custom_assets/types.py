@@ -37,6 +37,8 @@ class CustomAssetResponse(BaseModel):
     current_value: float
     current_value_in_euro: float
 
+    events: list["AssetEventResponse"]
+
 
 class AssetEventRequest(BaseModel):
     amount: float
