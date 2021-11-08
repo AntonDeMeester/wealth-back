@@ -32,6 +32,22 @@ class UpdateCustomAssetRequest(BaseModel):
     description: Optional[str]
 
 
+class AssetEventRequest(BaseModel):
+    amount: float
+    date: date
+
+    @validator("date")
+    def asset_date_in_the_past(cls, value):  # pylint: disable=no-self-argument
+        if value > date.today():
+            raise ValueError("Date must be in the past")
+        return value
+
+
+class AssetEventResponse(BaseModel):
+    amount: float
+    date: date
+
+
 class CustomAssetResponse(BaseModel):
     asset_id: UUID
     currency: Currency = Currency.EUR
@@ -39,18 +55,4 @@ class CustomAssetResponse(BaseModel):
     current_value: float
     current_value_in_euro: float
 
-    events: list["AssetEventResponse"]
-
-
-class AssetEventRequest(BaseModel):
-    amount: float
-    date: date
-
-    @validator("date")
-    def asset_date_in_the_past(cls, value):  # pylint: disable=no-self-argument
-        return value <= date.today()
-
-
-class AssetEventResponse(BaseModel):
-    amount: float
-    event_date: date
+    events: list[AssetEventResponse]

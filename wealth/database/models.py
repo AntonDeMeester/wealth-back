@@ -117,7 +117,7 @@ class CustomAsset(AssetClassMethods, EmbeddedModel):
     balances: List[WealthItem] = []
 
     def find_event(self, event_date: date) -> Optional[AssetEvent]:
-        matching_events = [e for e in self.events if e.date.day == event_date]
+        matching_events = [e for e in self.events if e.date.date() == event_date]
         if not matching_events:
             return None
         if len(matching_events) > 1:
