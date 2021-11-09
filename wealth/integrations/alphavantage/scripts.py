@@ -22,8 +22,8 @@ async def update_all_tickers():
     async with AlphaVantageApi() as api:
         for t in tickers:
             LOGGER.info(f"Updating {t.symbol} from AlphaVantage")
-            await api.update_ticker_history(t)
+            t = await api.update_ticker_history(t)
+            await engine.save(t)
             # To avoid rate limiting
             time.sleep(20)
-    await engine.save_all(tickers)
     LOGGER.info("Done with update all ticker information")

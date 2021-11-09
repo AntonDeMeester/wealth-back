@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from wealth.custom_assets.scripts import update_all_custom_asset_balances
 from wealth.integrations.alphavantage.scripts import update_all_tickers
 from wealth.integrations.exchangeratesapi.scripts import import_from_ecb
 from wealth.integrations.tink.scripts import update_tink_for_all_users
@@ -17,6 +18,7 @@ async def run_daily_scripts():
         update_all_tickers,
         update_all_stock_balances,
         update_tink_for_all_users,
+        update_all_custom_asset_balances,
     ]
     for function in scripts:
         try:
