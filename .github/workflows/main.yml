@@ -23,7 +23,7 @@ jobs:
           pip install poetry
           poetry install
       - name: Linting
-        run: make check
+        run: poetry run make check
       - name: Test with pytest
         env: # Set the secret as an input
           TINK_CLIENT_ID: tink-client-id
@@ -32,4 +32,4 @@ jobs:
           APP_SECRET: some-app-secret
           ENV: local
           KLARNA_API_KEY: klarna-api-key
-        run: make test
+        run: poetry run make test
