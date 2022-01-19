@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, validator
@@ -28,8 +27,8 @@ class CreateCustomAssetRequest(BaseModel):
 
 
 class UpdateCustomAssetRequest(BaseModel):
-    currency: Optional[Currency]
-    description: Optional[str]
+    currency: Currency | None
+    description: str | None
 
 
 class AssetEventRequest(BaseModel):

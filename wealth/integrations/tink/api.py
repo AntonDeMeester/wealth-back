@@ -1,7 +1,6 @@
 import json
 import logging
 from enum import Enum
-from typing import Dict, Optional
 from urllib.parse import urlencode
 
 from fastapi.encoders import jsonable_encoder
@@ -18,7 +17,9 @@ from .types import (
     AuthorizationGrantResponse,
     CreateUserRequest,
     CreateUserResponse,
+    Credential,
     GrantType,
+    ListCredentialsResponse,
     OAuthTokenRequestParameters,
     QueryRequest,
     QueryResponse,
@@ -47,7 +48,7 @@ class TinkServerApi(BaseApi):
     """
 
     # pylint: disable=no-self-use
-    async def _tink_request(self, endpoint: str, data: Dict, headers: Dict = None, is_json=True) -> Dict:
+    async def _tink_request(self, endpoint: str, data: dict, headers: dict = None, is_json=True) -> dict:
         if self.client is None:
             raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
         url = p.TINK_BASE_URL + endpoint
@@ -136,9 +137,9 @@ class TinkApi(BaseApi):
 
     def __init__(self):
         super().__init__()
-        self._code: Optional[str] = None
-        self._auth_token: Optional[str] = None
-        self._refresh_token: Optional[str] = None
+        self._code: str | None = None
+        self._auth_token: str | None = None
+        self._refresh_token: str | None = None
 
     async def initialise_code(self, code: str):
         """Sets the Tink Link code to use for access"""
@@ -177,13 +178,29 @@ class TinkApi(BaseApi):
         response = await self._tink_post_request(p.ENDPOINT_QUERY, data=request.dict())
         return QueryResponse.parse_obj(response)
 
-    async def _tink_post_request(self, *args, **kwargs) -> Dict:
+    async def list_credentials(self) -> ListCredentialsResponse:
+        """
+        Gets a token to refresh user information
+        Returns the code to use in the TinkApi
+        """
+        response = await self._tink_get_request(p.ENDPOINT_CREDENTIALS_LIST)
+        return ListCredentialsResponse.parse_obj(response)
+
+    async def get_credential(self, credential_id: str) -> Credential:
+        """
+        Gets a token to refresh user information
+        Returns the code to use in the TinkApi
+        """
+        response = await self._tink_get_request(p.ENDPOINT_CREDENTIALS_GET.format(id=credential_id))
+        return Credential.parse_obj(response)
+
+    async def _tink_post_request(self, *args, **kwargs) -> dict:
         return await self._tink_http_request(HttpMethod.POST, *args, **kwargs)
 
-    async def _tink_get_request(self, *args, **kwargs) -> Dict:
+    async def _tink_get_request(self, *args, **kwargs) -> dict:
         return await self._tink_http_request(HttpMethod.GET, *args, **kwargs)
 
-    async def _tink_http_request(self, method: HttpMethod, endpoint: str, data: Optional[Dict] = None) -> Dict:
+    async def _tink_http_request(self, method: HttpMethod, endpoint: str, data: dict | None = None) -> dict:
         if self.client is None:
             raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
         if self._refresh_token_expired():
@@ -202,7 +219,7 @@ class TinkApi(BaseApi):
         return response.json()
 
     # pylint: disable=no-self-use
-    async def _tink_auth_request(self, data: OAuthTokenRequestParameters) -> Dict:
+    async def _tink_auth_request(self, data: OAuthTokenRequestParameters) -> dict:
         """Queries the Token endpoint of Tink with the provided request. Returns the response"""
         if self.client is None:
             raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
@@ -268,7 +285,7 @@ class TinkLinkApi:
         non_empty_params = query_params.dict(exclude_none=True)
         return f"{url}?{urlencode(non_empty_params)}"
 
-    def get_add_credentials_link(self, authorization_code: str, market: Optional[str] = None, test=False) -> str:
+    def get_add_credentials_link(self, authorization_code: str, market: str | None = None, test=False) -> str:
         """
         Formats a Add Credentials link for Tink Link to add a bank account
         The Add credentials adds a bank account to the Tink permanent user

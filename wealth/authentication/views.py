@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 
 from wealth.authentication import get_authenticated_user
-from wealth.database.api import engine
 from wealth.database.models import User
 
 from .models import CreateUser, LoginUser, Settings, ViewUser
@@ -51,7 +50,7 @@ async def create_user(user: CreateUser, authorize: WealthJwt = Depends()):
     await user.async_validate()
 
     db_user = User.parse_obj(user.dict())
-    db_user = await engine.save(db_user)
+    db_user = await db_user.save()
     return db_user
 
 
@@ -61,7 +60,7 @@ async def create_user(user: CreateUser, authorize: WealthJwt = Depends()):
 
 #     current_user = await authorize.get_jwt_user()
 #     current_user.copy(update=user.dict())
-#     current_user = await engine.save(current_user)
+#     current_user = await current_user.save()
 
 #     return_user = ViewUser.parse_obj(current_user.dict())
 #     return return_user

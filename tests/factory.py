@@ -1,11 +1,11 @@
-from typing import Any, Callable, Literal, Optional, Protocol, Type, TypeVar, Union, overload
+from typing import Any, Callable, Literal, Protocol, Type, TypeVar, Union, overload
 
-from odmantic.model import _BaseODMModel
+from beanie import Document
 from pydantic import BaseModel
 
 T = TypeVar("T", covariant=True)
 P = TypeVar("P", bound=BaseModel)
-D = TypeVar("D", bound=_BaseODMModel)
+D = TypeVar("D", bound=Document)
 
 SpecialCaseDict = dict[str, Callable[[Any], Any]]
 
@@ -24,7 +24,7 @@ class ModelGenerator(Protocol[T]):
 
 
 def database_model_generator(
-    model_type: Type[D], defaults: dict, special_cases: Optional[SpecialCaseDict] = None
+    model_type: Type[D], defaults: dict, special_cases: SpecialCaseDict | None = None
 ) -> ModelGenerator[D]:
     _special_cases = special_cases if special_cases is not None else {}
 
@@ -42,13 +42,13 @@ def database_model_generator(
             all_data[key] = to_be_called(all_data[key])
         if _raw:
             return all_data
-        return model_type.parse_doc(all_data)
+        return model_type.parse_obj(all_data)
 
     return _generate_model
 
 
 def pydantic_model_generator(
-    model_type: Type[P], defaults: dict, special_cases: Optional[SpecialCaseDict] = None
+    model_type: Type[P], defaults: dict, special_cases: SpecialCaseDict | None = None
 ) -> ModelGenerator[P]:
     _special_cases = special_cases if special_cases is not None else {}
 

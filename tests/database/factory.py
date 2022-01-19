@@ -1,7 +1,5 @@
 import uuid
 
-from odmantic import ObjectId
-
 from tests.factory import SpecialCaseDict, database_model_generator
 from wealth.authentication.passwords import encode_password
 from wealth.database.models import Account, CustomAsset, User, WealthItem
@@ -9,7 +7,6 @@ from wealth.parameters.constants import Currency
 from wealth.parameters.general import AccountSource
 
 _user_defaults = {
-    "_id": ObjectId(),
     "email": "test@test.com",
     "password": "password123",
     "first_name": "Test first",

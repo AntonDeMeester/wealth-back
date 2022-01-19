@@ -4,7 +4,6 @@ import httpx
 import pytest
 from fastapi.exceptions import HTTPException
 from fastapi_jwt_auth.exceptions import JWTDecodeError, MissingTokenError
-from odmantic import AIOEngine
 
 from tests.authentication.factory import generate_create_user
 from tests.database.factory import generate_user
@@ -37,18 +36,18 @@ class TestModels:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_user_async_validate_email_present(self, local_database: AIOEngine):
+    async def test_user_async_validate_email_present(self, local_database):
         not_present_email = "not@present.com"
         validated = await CreateUser.validate_email(not_present_email)
         assert validated == not_present_email
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_user_async_validate_email_not_present(self, local_database: AIOEngine):
+    async def test_user_async_validate_email_not_present(self, local_database):
         already_present_email = "is@present.com"
 
         db_user = User(email=already_present_email, password=b"123", first_name="hello", last_name="world")
-        await local_database.save(db_user)
+        await db_user.save()
 
         with pytest.raises(ValueError) as exc:
             await CreateUser.validate_email(already_present_email)
@@ -108,10 +107,10 @@ class TestPasswords:
 class TestAuthViews:
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_login_valid(self, local_database: AIOEngine):
+    async def test_login_valid(self, local_database):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
-        await local_database.save(user)
+        await user.save()
 
         data = {"email": user.email, "password": password}
 
@@ -124,7 +123,7 @@ class TestAuthViews:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_login_user_not_exist(self, local_database: AIOEngine):
+    async def test_login_user_not_exist(self, local_database):
         password = "password123"
         data = {"email": "test@test.com", "password": password}
 
@@ -135,11 +134,11 @@ class TestAuthViews:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_login_user_not_password_wrong(self, local_database: AIOEngine):
+    async def test_login_user_not_password_wrong(self, local_database):
         password = "password123"
         wrong_password = "password124"
         user = generate_user(email="test@test.com", password=password)
-        await local_database.save(user)
+        await user.save()
 
         data = {"email": user.email, "password": wrong_password}
 
@@ -150,10 +149,10 @@ class TestAuthViews:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_refresh_valid(self, local_database: AIOEngine):
+    async def test_refresh_valid(self, local_database):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
-        await local_database.save(user)
+        await user.save()
 
         data = {"email": user.email, "password": password}
 
@@ -167,7 +166,7 @@ class TestAuthViews:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_refresh_wrong_jwt(self, local_database: AIOEngine):
+    async def test_refresh_wrong_jwt(self, local_database):
         async with httpx.AsyncClient(app=app, base_url="http://test") as client:
             auth = "Bearer Somethingwrong"
             response = await client.post("/auth/refresh", headers={"Authorization": auth})
@@ -176,10 +175,10 @@ class TestAuthViews:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_get_user(self, local_database: AIOEngine):
+    async def test_get_user(self, local_database):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
-        await local_database.save(user)
+        await user.save()
 
         data_input = {"email": user.email, "password": password}
 
@@ -196,10 +195,10 @@ class TestAuthViews:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_get_user_no_auth(self, local_database: AIOEngine):
+    async def test_get_user_no_auth(self, local_database):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
-        await local_database.save(user)
+        await user.save()
 
         async with httpx.AsyncClient(app=app, base_url="http://test") as client:
             auth = "Bearer hello world"
@@ -209,7 +208,7 @@ class TestAuthViews:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_create_user(self, local_database: AIOEngine):
+    async def test_create_user(self, local_database):
         data_input = generate_create_user(email="test@test.com", _raw=True)
 
         async with httpx.AsyncClient(app=app, base_url="http://test") as client:
@@ -223,10 +222,10 @@ class TestAuthViews:
 class TestWealthJwt:
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_get_jwt_user_present(self, local_database: AIOEngine):
+    async def test_get_jwt_user_present(self, local_database):
         email = "test@test.com"
         user = generate_user(email=email)
-        await local_database.save(user)
+        await user.save()
 
         jwt = WealthJwt()
 
@@ -238,7 +237,7 @@ class TestWealthJwt:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_get_jwt_user_not_present(self, local_database: AIOEngine):
+    async def test_get_jwt_user_not_present(self, local_database):
         email = "test@test.com"
 
         jwt = WealthJwt()
@@ -250,7 +249,7 @@ class TestWealthJwt:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_get_jwt_user_no_token(self, local_database: AIOEngine):
+    async def test_get_jwt_user_no_token(self, local_database):
         jwt = WealthJwt()
 
         with patch.object(WealthJwt, "get_jwt_subject", return_value=None):
@@ -260,7 +259,7 @@ class TestWealthJwt:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_get_authenticated_jwt_user_valid(self, local_database: AIOEngine):
+    async def test_get_authenticated_jwt_user_valid(self, local_database):
         user = generate_user()
 
         jwt = WealthJwt()
@@ -272,7 +271,7 @@ class TestWealthJwt:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_get_authenticated_jwt_user_invalid(self, local_database: AIOEngine):
+    async def test_get_authenticated_jwt_user_invalid(self, local_database):
         user = None
 
         jwt = WealthJwt()
@@ -284,7 +283,7 @@ class TestWealthJwt:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_get_authenticated_jwt_user_no_token(self, local_database: AIOEngine):
+    async def test_get_authenticated_jwt_user_no_token(self, local_database):
         jwt = WealthJwt()
 
         with pytest.raises(MissingTokenError) as exc:
@@ -309,10 +308,10 @@ class TestWealthJwt:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_login_valid(self, local_database: AIOEngine):
+    async def test_login_valid(self, local_database):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
-        await local_database.save(user)
+        await user.save()
 
         data = {"email": user.email, "password": password}
         jwt = WealthJwt()
@@ -323,7 +322,7 @@ class TestWealthJwt:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_login_user_not_exist(self, local_database: AIOEngine):
+    async def test_login_user_not_exist(self, local_database):
         password = "password123"
         user = generate_user(email="test@test.com", password=password)
 
@@ -336,11 +335,11 @@ class TestWealthJwt:
 
     @pytest.mark.asyncio
     # pylint: disable=unused-argument
-    async def test_login_user_password_wrong(self, local_database: AIOEngine):
+    async def test_login_user_password_wrong(self, local_database):
         password = "password123"
         wrong_password = "password124"
         user = generate_user(email="test@test.com", password=password)
-        await local_database.save(user)
+        await user.save()
 
         data = {"email": user.email, "password": wrong_password}
         jwt = WealthJwt()

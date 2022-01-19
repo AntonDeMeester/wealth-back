@@ -1,8 +1,8 @@
+import asyncio
 from datetime import date, datetime, timedelta
 from typing import Sequence
 
 import pytest
-from odmantic import AIOEngine
 
 from wealth.database.models import ExchangeRate, ExchangeRateItem
 from wealth.integrations.exchangeratesapi.dependency import Exchanger
@@ -22,7 +22,7 @@ def reset_exchanger():
 
 @pytest.mark.usefixtures("reset_exchanger")
 class TestExchanger:
-    async def set_fake_rates(self, engine: AIOEngine) -> Sequence[ExchangeRate]:
+    async def set_fake_rates(self, local_database) -> Sequence[ExchangeRate]:  # pylint: disable=unused-argument
         rates = [
             ExchangeRate(
                 currency=Currency.SEK,
@@ -41,11 +41,11 @@ class TestExchanger:
                 ],
             ),
         ]
-        await engine.save_all(rates)
+        await asyncio.gather(*[r.save() for r in rates])
         return rates
 
     @pytest.mark.asyncio
-    async def test_get_rates(self, local_database: AIOEngine):
+    async def test_get_rates(self, local_database):
         raw_rates = await self.set_fake_rates(local_database)
         converted_rates = {item.currency: item.get_rates_in_dict() for item in raw_rates}
 
@@ -57,7 +57,7 @@ class TestExchanger:
         assert Exchanger.last_checked - datetime.now() < timedelta(minutes=1)
 
     @pytest.mark.asyncio
-    async def test_get_rates_caching(self, local_database: AIOEngine):
+    async def test_get_rates_caching(self, local_database):
         raw_rates = await self.set_fake_rates(local_database)
         converted_rates = {item.currency: item.get_rates_in_dict() for item in raw_rates}
 
@@ -71,7 +71,7 @@ class TestExchanger:
         assert retrieved_rates == converted_rates
 
     @pytest.mark.asyncio
-    async def test_get_rates_refresh(self, local_database: AIOEngine):
+    async def test_get_rates_refresh(self, local_database):
         raw_rates = await self.set_fake_rates(local_database)
         converted_rates = {item.currency: item.get_rates_in_dict() for item in raw_rates}
 
@@ -83,7 +83,7 @@ class TestExchanger:
         assert retrieved_rates == converted_rates
 
     @pytest.mark.asyncio
-    async def test_convert_to_euros_on_date(self, local_database: AIOEngine):
+    async def test_convert_to_euros_on_date(self, local_database):
         await self.set_fake_rates(local_database)
 
         currency = Currency.SEK
@@ -96,7 +96,7 @@ class TestExchanger:
         assert converted == 100 / 10.0202
 
     @pytest.mark.asyncio
-    async def test_convert_to_euros_on_date_date_not_present(self, local_database: AIOEngine):
+    async def test_convert_to_euros_on_date_date_not_present(self, local_database):
         await self.set_fake_rates(local_database)
 
         currency = Currency.SEK
@@ -109,7 +109,7 @@ class TestExchanger:
         assert converted == 100 / 10.0202
 
     @pytest.mark.asyncio
-    async def test_convert_to_euros_on_date_date_not_present_and_no_close(self, local_database: AIOEngine):
+    async def test_convert_to_euros_on_date_date_not_present_and_no_close(self, local_database):
         await self.set_fake_rates(local_database)
 
         currency = Currency.SEK
@@ -133,7 +133,7 @@ class TestExchanger:
         assert converted == 100
 
     @pytest.mark.asyncio
-    async def test_convert_to_euros_on_date_currency_not_supported(self, local_database: AIOEngine):
+    async def test_convert_to_euros_on_date_currency_not_supported(self, local_database):
         await self.set_fake_rates(local_database)
         currency = Currency.GBP
         amount = 100

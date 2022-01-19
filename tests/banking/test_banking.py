@@ -48,7 +48,7 @@ class TestBankingViews:
 
         assert response.status_code == 200
         data = response.json()
-        assert data == [jsonable_encoder(acc.doc(include=UpdateAccountResponse.__fields__.keys())) for acc in accounts]
+        assert data == [jsonable_encoder(acc.dict(include=UpdateAccountResponse.__fields__.keys())) for acc in accounts]
 
     @pytest.mark.asyncio
     async def test_get_accounts_not_auth(self, app_fixture: FastAPI):
@@ -72,7 +72,7 @@ class TestBankingViews:
 
         assert response.status_code == 200
         data = response.json()
-        assert data == jsonable_encoder(one_account.doc(include=UpdateAccountResponse.__fields__.keys()))
+        assert data == jsonable_encoder(one_account.dict(include=UpdateAccountResponse.__fields__.keys()))
 
     @pytest.mark.asyncio
     async def test_get_account_not_auth(self, app_fixture: FastAPI):

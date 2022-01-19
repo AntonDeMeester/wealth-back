@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-from odmantic import AIOEngine
 
 from tests.database.factory import generate_account as generate_db_account
 from tests.database.factory import generate_user, generate_wealth_item
@@ -28,7 +27,7 @@ class TestTinkLogic:
             await logic.initialise_tink_api("code")
 
     @pytest.mark.asyncio
-    async def test_server_context_manager(self):
+    async def test_server_context_manager(self, local_database):  # pylint: disable=unused-argument
         logic = TinkLogic()
         with pytest.raises(TinkRuntimeException):
             await logic.create_tink_user(generate_user())
@@ -143,9 +142,9 @@ class TestTinkLogic:
                 query.assert_called_with(QueryRequest(accounts=[account_id]))
 
     @pytest.mark.asyncio
-    async def test_create_tink_user(self, local_database: AIOEngine):
+    async def test_create_tink_user(self, local_database):  # pylint: disable=unused-argument
         user = generate_user(first_name="fn", last_name="ln", market="SE", locale="en_GB", tink_user_id="")
-        await local_database.save(user)
+        await user.save()
 
         user_id = "user-123"
 
@@ -157,7 +156,7 @@ class TestTinkLogic:
         assert result == user
         assert result.tink_user_id == user_id
 
-        db_user = await local_database.find_one(User, User.id == user.id)
+        db_user = await User.find_one(User.id == user.id)
         assert db_user is not None
         assert db_user.tink_user_id == result.tink_user_id
 
@@ -201,10 +200,7 @@ class TestTinkLogic:
     async def test_get_url_to_initiate_refresh_credentials(self):
         credentials = "cred-123"
         user = generate_user(
-            first_name="fn",
-            last_name="ln",
-            tink_user_id="abcdef",
-            tink_credentials=[credentials, "other-cred"],
+            first_name="fn", last_name="ln", tink_user_id="abcdef", accounts=[generate_db_account(credential_id=credentials)]
         )
 
         auth_code = "auth_code"
@@ -223,11 +219,7 @@ class TestTinkLogic:
     @pytest.mark.asyncio
     async def test_get_url_to_initiate_refresh_credentials_no_tink_user(self):
         credentials = "cred-123"
-        user = generate_user(
-            first_name="fn",
-            last_name="ln",
-            tink_credentials=[credentials, "other-cred"],
-        )
+        user = generate_user(first_name="fn", last_name="ln", accounts=[generate_db_account(credential_id=credentials)])
 
         async with TinkLogic() as logic:
             with pytest.raises(TinkRuntimeException) as exc:
@@ -241,7 +233,7 @@ class TestTinkLogic:
         user = generate_user(
             first_name="fn",
             last_name="ln",
-            credentials=["some-cred", "other-cred"],
+            accounts=[generate_db_account(credential_id="some-cred"), generate_db_account(credential_id="other-cred")],
         )
 
         async with TinkLogic() as logic:
@@ -268,7 +260,7 @@ class TestTinkLogic:
         assert response == result
 
     @pytest.mark.asyncio
-    async def test_update_all_accounts(self, local_database: AIOEngine):
+    async def test_update_all_accounts(self, local_database):  # pylint: disable=unused-argument
         other_account_id = "other-acc"
         refresh_account_id = "refresh-acc"
         new_account_id = "new-acc"
@@ -284,7 +276,7 @@ class TestTinkLogic:
         original_accounts = [other_account, refresh_account]
 
         user = generate_user(accounts=original_accounts)
-        await local_database.save(user)
+        await user.save()
 
         get_accounts_response = [refresh_account, new_account]
         response_refresh = [generate_wealth_item(source=source, account_id=refresh_account_id) for _ in range(7)]
@@ -348,33 +340,14 @@ class TestTinkLogic:
         assert user == result
 
     @pytest.mark.asyncio
-    async def test_execute_callback_for_add_credentials(self, local_database: AIOEngine):  # pylint: disable=unused-argument
+    async def test_execute_callback_for_credentials(self, local_database):  # pylint: disable=unused-argument
         user_id = "tink-user-id"
         user = generate_user(tink_user_id=user_id)
 
         credentials = "cred-123"
 
         async with TinkLogic() as logic:
-            with patch.object(logic, "refresh_user_from_backend", side_effect=lambda x: x) as refresh_user_from_backend:
-                await logic.execute_callback_for_add_credentials(credentials, user)
+            with patch.object(logic, "update_acccounts_of_credential") as update_acccounts_of_credential:
+                await logic.execute_callback_for_credentials(credentials, user)
 
-        refresh_user_from_backend.assert_called_with(user)
-
-        assert credentials in user.tink_credentials
-
-    @pytest.mark.asyncio
-    # pylint: disable=unused-argument
-    async def test_execute_callback_for_add_credentials_already_there(self, local_database: AIOEngine):
-        user_id = "tink-user-id"
-        credentials = "cred-123"
-        old_credentials = [credentials, "other-credentials"]
-        user = generate_user(tink_user_id=user_id, tink_credentials=old_credentials)
-
-        async with TinkLogic() as logic:
-            with patch.object(logic, "refresh_user_from_backend", side_effect=lambda x: x) as refresh_user_from_backend:
-                result = await logic.execute_callback_for_add_credentials(credentials, user)
-
-        refresh_user_from_backend.assert_called_with(user)
-
-        assert result == user
-        assert set(user.tink_credentials) == set(old_credentials)
+        update_acccounts_of_credential.assert_called_with(user, credentials)

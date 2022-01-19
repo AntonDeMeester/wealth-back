@@ -1,11 +1,10 @@
 import logging
 from datetime import date, timedelta
-from typing import Optional
 
 LOGGER = logging.getLogger(__name__)
 
 
-def get_rate_at_date(dated_conversion_rates: dict[date, float], target_date: date, *, max_attempts=14) -> Optional[float]:
+def get_rate_at_date(dated_conversion_rates: dict[date, float], target_date: date, *, max_attempts=14) -> float | None:
     attempts = 0
     current_date = target_date
     while attempts < max_attempts:

@@ -3,7 +3,6 @@ from datetime import date, timedelta
 
 from dateutil.parser import parser
 
-from wealth.database.api import engine
 from wealth.database.models import StockPosition, StockTicker, WealthItem
 from wealth.integrations.alphavantage.api import AlphaVantageApi
 from wealth.integrations.exchangeratesapi.dependency import Exchanger
@@ -51,13 +50,13 @@ async def populate_stock_balances(position: StockPosition) -> list[WealthItem]:
 
 
 async def get_or_create_stock_ticker(ticker: str) -> StockTicker:
-    stock_ticker = await engine.find_one(StockTicker, StockTicker.symbol == ticker)
+    stock_ticker = await StockTicker.find_one(StockTicker.symbol == ticker)
     if stock_ticker:
         return stock_ticker
     async with AlphaVantageApi() as api:
         stock_ticker = await api.get_ticker_history(ticker)
         assert stock_ticker is not None
-        await engine.save(stock_ticker)
+        await stock_ticker.save()
     return stock_ticker
 
 

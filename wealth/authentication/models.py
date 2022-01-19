@@ -3,7 +3,6 @@ from typing import List
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel, ValidationError, root_validator, validator
 
-from wealth.database.api import engine
 from wealth.database.models import User
 from wealth.parameters import env
 
@@ -37,7 +36,7 @@ class CreateUser(ViewUser):
 
     @classmethod
     async def validate_email(cls, email):
-        user = await engine.find_one(User, User.email == email)
+        user = await User.find_one(User.email == email)
         if user is not None:
             raise ValueError("Email already registered")
         return email

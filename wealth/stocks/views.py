@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from wealth.authentication import get_authenticated_user
-from wealth.database.api import engine
 from wealth.database.models import StockPosition as DBStockPosition
 from wealth.database.models import User
 from wealth.database.models import WealthItem as WealthItemDB
@@ -45,7 +44,7 @@ async def create_position(position: StockPositionRequest, user: User = Depends(g
     except TickerNotFoundException as e:
         raise HTTPException(422, {"ticker": f"Ticker symbol not found ({e.ticker})"})  # pylint: disable=raise-missing-from
     user.stock_positions.append(db_position)
-    await engine.save(user)
+    await user.save()
     serialized = db_position.dict()
     serialized["current_value"] = db_position.current_value
     serialized["current_value_in_euro"] = db_position.current_value_in_euro
@@ -65,7 +64,7 @@ async def update_position(
         if value is not None:
             setattr(db_position, key, value)
     db_position.balances = await populate_stock_balances(db_position)
-    await engine.save(user)
+    await user.save()
     serialized = db_position.dict()
     serialized["current_value"] = db_position.current_value
     serialized["current_value_in_euro"] = db_position.current_value_in_euro
@@ -78,7 +77,7 @@ async def delete_position(position_id: str, user: User = Depends(get_authenticat
     if db_position is None:
         raise NotFoundException()
     user.stock_positions = [position for position in user.stock_positions if position != db_position]
-    await engine.save(user)
+    await user.save()
 
 
 @router.get("/positions/{position_id}/balances", response_model=list[WealthItem])

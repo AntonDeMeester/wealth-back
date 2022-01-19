@@ -25,7 +25,7 @@ async def tink_callback(data: TinkCallbackRequest, user: User = Depends(get_auth
                 await tink_logic.execute_callback_for_authorize(data.code, user)
                 response = TinkCallbackResponse()
             else:
-                await tink_logic.execute_callback_for_add_credentials(data.credentials_id, user)
+                await tink_logic.execute_callback_for_credentials(data.credentials_id, user)
                 response = TinkCallbackResponse(credentials_id=data.credentials_id)
         except TinkApiException:
             raise HTTPException(401, {"error": "Tink code not valid"})
@@ -47,11 +47,21 @@ async def tink_callback_authorize(
     return TinkLinkRedirectResponse(url=url)
 
 
-@router.get("/refresh")
-async def tink_callback_refresh(user: User = Depends(get_authenticated_user)):
+@router.post("/bank/refresh/{credential_id}")
+async def tink_refresh_credential(credential_id: str, user: User = Depends(get_authenticated_user)) -> TinkLinkRedirectResponse:
     """
     Returns the TinkLink URL to add a bank
     The Tink User ID needs to exist.
+    """
+    async with TinkLogic() as tink_logic:
+        url = await tink_logic.get_url_to_initiate_refresh_credentials(user, credential_id)
+    return TinkLinkRedirectResponse(url=url)
+
+
+@router.get("/refresh")
+async def tink_callback_refresh(user: User = Depends(get_authenticated_user)):
+    """
+    Refreshes the account data from Tink of one user
     """
     async with TinkLogic() as tink_logic:
         await tink_logic.refresh_user_from_backend(user)

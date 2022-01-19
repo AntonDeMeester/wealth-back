@@ -1,9 +1,10 @@
-from datetime import date, datetime
-from typing import List, Optional, Protocol, Union
+from datetime import date, datetime, timedelta
+from enum import Enum
+from typing import List, Protocol, Union
 from uuid import UUID, uuid4
 
-from odmantic import EmbeddedModel, Field, Model
-from pydantic import validator
+from beanie import Document
+from pydantic import BaseModel, Field, validator
 
 from wealth.parameters.constants import Currency
 from wealth.parameters.general import AccountSource
@@ -11,7 +12,7 @@ from wealth.util.validators import convert_datetime
 
 
 # pylint: disable=abstract-method
-class WealthItem(EmbeddedModel):
+class WealthItem(BaseModel):
     date: datetime
     amount: float
     amount_in_euro: float = 0
@@ -55,8 +56,14 @@ class AssetClassMethods:
         return self.balances[-1].amount_in_euro
 
 
+class TinkCredentialStatus(str, Enum):
+    VALID = "valid"
+    NEEDS_REFRESH = "needs_refresh"
+    ERROR = "error"
+
+
 # pylint: disable=abstract-method
-class Account(AssetClassMethods, EmbeddedModel):
+class Account(AssetClassMethods, BaseModel):
     asset_id: UUID = Field(default_factory=uuid4)
     account_id: UUID = Field(default_factory=uuid4)
 
@@ -74,6 +81,10 @@ class Account(AssetClassMethods, EmbeddedModel):
 
     balances: List[WealthItem] = []
 
+    # Tink stuff
+    credential_id: str = ""
+    credential_status: TinkCredentialStatus | None = None
+
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
@@ -81,7 +92,7 @@ class Account(AssetClassMethods, EmbeddedModel):
         return self.external_id == other.external_id and self.source == other.source
 
 
-class StockPosition(AssetClassMethods, EmbeddedModel):
+class StockPosition(AssetClassMethods, BaseModel):
     asset_id: UUID = Field(default_factory=uuid4)
     position_id: UUID = Field(default_factory=uuid4)
 
@@ -98,7 +109,7 @@ class StockPosition(AssetClassMethods, EmbeddedModel):
         return convert_datetime(v)
 
 
-class AssetEvent(EmbeddedModel):
+class AssetEvent(BaseModel):
     date: datetime
     amount: float
 
@@ -108,7 +119,7 @@ class AssetEvent(EmbeddedModel):
         return convert_datetime(v)
 
 
-class CustomAsset(AssetClassMethods, EmbeddedModel):
+class CustomAsset(AssetClassMethods, BaseModel):
     asset_id: UUID = Field(default_factory=uuid4)
     currency: Currency = Currency.EUR
     description: str = ""
@@ -116,7 +127,7 @@ class CustomAsset(AssetClassMethods, EmbeddedModel):
     events: List[AssetEvent] = []
     balances: List[WealthItem] = []
 
-    def find_event(self, event_date: date) -> Optional[AssetEvent]:
+    def find_event(self, event_date: date) -> AssetEvent | None:
         matching_events = [e for e in self.events if e.date.date() == event_date]
         if not matching_events:
             return None
@@ -126,7 +137,7 @@ class CustomAsset(AssetClassMethods, EmbeddedModel):
 
 
 # pylint: disable=abstract-method
-class User(Model):
+class User(Document):
     # Auth
     email: str
     password: bytes
@@ -144,7 +155,10 @@ class User(Model):
 
     # Tink stuff
     tink_user_id: str = ""
-    tink_credentials: List[str] = []
+
+    class Settings:
+        use_cache = True
+        cache_expiration_time = timedelta(minutes=15)
 
     @property
     def assets(self) -> List[AssetClass]:
@@ -161,7 +175,7 @@ class User(Model):
             balances += asset.balances
         return balances
 
-    def find_account(self, account_id: Union[UUID, str]) -> Optional[Account]:
+    def find_account(self, account_id: Union[UUID, str]) -> Account | None:
         accounts = [a for a in self.accounts if str(a.account_id) == str(account_id)]
         if not accounts:
             return None
@@ -169,7 +183,7 @@ class User(Model):
             raise ValueError(f"Found more than one account with account_id {account_id}")
         return accounts[0]
 
-    def find_stock_position(self, position_id: Union[UUID, str]) -> Optional[StockPosition]:
+    def find_stock_position(self, position_id: Union[UUID, str]) -> StockPosition | None:
         positions = [p for p in self.stock_positions if str(p.position_id) == str(position_id)]
         if not positions:
             return None
@@ -177,7 +191,7 @@ class User(Model):
             raise ValueError(f"Found more than one account with account_id {position_id}")
         return positions[0]
 
-    def find_custom_asset(self, asset_id: Union[UUID, str]) -> Optional[CustomAsset]:
+    def find_custom_asset(self, asset_id: Union[UUID, str]) -> CustomAsset | None:
         asset = [p for p in self.custom_assets if str(p.asset_id) == str(asset_id)]
         if not asset:
             return None
@@ -186,7 +200,7 @@ class User(Model):
         return asset[0]
 
 
-class ExchangeRateItem(EmbeddedModel):
+class ExchangeRateItem(BaseModel):
     date: datetime
     rate: float
 
@@ -196,7 +210,7 @@ class ExchangeRateItem(EmbeddedModel):
         return convert_datetime(v)
 
 
-class ExchangeRate(Model):
+class ExchangeRate(Document):
     """A class for the history of an exchange rate against the euro"""
 
     currency: Currency
@@ -211,8 +225,11 @@ class ExchangeRate(Model):
 
         return self.currency == other.currency
 
+    class Collection:
+        name = "exchange_rates"
 
-class StockTickerItem(EmbeddedModel):
+
+class StockTickerItem(BaseModel):
     date: datetime
     price: float
 
@@ -222,7 +239,7 @@ class StockTickerItem(EmbeddedModel):
         return convert_datetime(v)
 
 
-class StockTicker(Model):
+class StockTicker(Document):
     """A class for the history of a stock ticker"""
 
     symbol: str
@@ -231,3 +248,6 @@ class StockTicker(Model):
 
     def get_rates_in_dict(self) -> dict[date, float]:
         return {r.date.date(): r.price for r in self.rates}
+
+    class Collection:
+        name = "stock_tickers"

@@ -1,9 +1,9 @@
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 
+from wealth.database.models import TinkCredentialStatus
 from wealth.parameters.constants import Currency
 from wealth.parameters.general import AccountSource
 
@@ -16,9 +16,9 @@ class WealthItem(BaseModel):
 
 
 class UpdateAccountRequest(BaseModel):
-    is_active: Optional[bool]
-    name: Optional[str]
-    bank_alias: Optional[str]
+    is_active: bool | None
+    name: str | None
+    bank_alias: str | None
 
 
 class UpdateAccountResponse(BaseModel):
@@ -34,3 +34,5 @@ class UpdateAccountResponse(BaseModel):
     type: str
     bank: str = ""
     bank_alias: str = ""
+
+    credential_status: TinkCredentialStatus | None

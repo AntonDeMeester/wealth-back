@@ -7,7 +7,6 @@ from zipfile import ZipFile
 
 import httpx
 
-from wealth.database.api import engine
 from wealth.database.models import ExchangeRate, ExchangeRateItem
 from wealth.logging import set_up_logging
 from wealth.parameters.constants import Currency
@@ -46,7 +45,7 @@ async def import_from_ecb():
     for c in Currency:
         if c == Currency.EUR:
             continue
-        db_rate = await engine.find_one(ExchangeRate, ExchangeRate.currency == c)
+        db_rate = await ExchangeRate.find_one(ExchangeRate.currency == c)
         if db_rate is None:
             db_rate = ExchangeRate(currency=c, rates=[])
         db_rate.rates = []
@@ -61,7 +60,7 @@ async def import_from_ecb():
             if conversion_rate != NA:
                 parsed.rates.append(ExchangeRateItem(date=date, rate=float(conversion_rate)))
 
-    await engine.save_all(parsed_rates)
+    await asyncio.gather(*[p.save() for p in parsed_rates])
     LOGGER.info("Done with the get the new exchange rates from the ECB")
 
 

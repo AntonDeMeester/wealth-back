@@ -1,11 +1,9 @@
 import json
 import logging
 from datetime import date, datetime
-from typing import Optional
 
 from fastapi.encoders import jsonable_encoder
 
-from wealth.database.api import engine
 from wealth.database.models import ExchangeRate
 from wealth.parameters.constants import Currency
 from wealth.util.conversion import get_rate_at_date
@@ -19,7 +17,7 @@ RateInDict = dict[Currency, dict[date, float]]
 
 
 class Exchanger:
-    last_checked: Optional[datetime] = None
+    last_checked: datetime | None = None
     _rates: RateInDict = {}
 
     @classmethod
@@ -46,7 +44,7 @@ class Exchanger:
 
     @classmethod
     async def _update_exchange_rates(cls):
-        rates = await engine.find(ExchangeRate)
+        rates = await ExchangeRate.find().to_list()
         cls.last_checked = datetime.now()
         cls._rates = {item.currency: item.get_rates_in_dict() for item in rates}
 

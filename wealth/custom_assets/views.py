@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends
 
 from wealth.authentication import get_authenticated_user
 from wealth.custom_assets.logic import populate_asset_balances
-from wealth.database.api import engine
 from wealth.database.models import AssetEvent as DBAssetEvent
 from wealth.database.models import CustomAsset as DBCustomAsset
 from wealth.database.models import User
@@ -60,7 +59,7 @@ async def create_custom_asset(asset: CreateCustomAssetRequest, user: User = Depe
     db_asset = DBCustomAsset(**asset_dict, events=[event])
     db_asset.balances = await populate_asset_balances(db_asset)
     user.custom_assets.append(db_asset)
-    await engine.save(user)
+    await user.save()
 
     serialized = db_asset.dict()
     serialized["current_value"] = db_asset.current_value
@@ -80,7 +79,7 @@ async def update_custom_asset(
     for key, value in updated_asset:
         if value is not None:
             setattr(db_asset, key, value)
-    await engine.save(user)
+    await user.save()
 
     serialized = db_asset.dict()
     serialized["current_value"] = db_asset.current_value
@@ -94,7 +93,7 @@ async def delete_custom_asset(asset_id: str, user: User = Depends(get_authentica
     if db_asset is None:
         raise NotFoundException()
     user.custom_assets = [asset for asset in user.custom_assets if asset != db_asset]
-    await engine.save(user)
+    await user.save()
 
 
 @router.put("/assets/{asset_id}/events", response_model=AssetEventResponse)
@@ -112,7 +111,7 @@ async def put_event(asset_id: str, event: AssetEventRequest, user: User = Depend
             if value is not None:
                 setattr(matching_event, key, value)
     db_asset.balances = await populate_asset_balances(db_asset)
-    await engine.save(user)
+    await user.save()
 
     return matching_event
 
@@ -127,7 +126,7 @@ async def delete_event(asset_id: str, event_date: date, user: User = Depends(get
     if not matching_event:
         raise NotFoundException()
     db_asset.events = [e for e in db_asset.events if e.date.date() != event_date]
-    await engine.save(user)
+    await user.save()
 
 
 @router.get("/assets/{asset_id}/balances", response_model=list[WealthItem])

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 
 from wealth.authentication import get_authenticated_user
-from wealth.database.api import engine
 from wealth.database.models import User
 from wealth.util.exceptions import NotFoundException
 
@@ -40,7 +39,7 @@ async def update_account(account_id: str, updated_account: UpdateAccountRequest,
     for key, value in updated_account:
         if value is not None:
             setattr(db_account, key, value)
-    await engine.save(user)
+    await user.save()
     return db_account
 
 

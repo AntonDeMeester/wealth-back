@@ -1,11 +1,9 @@
-from typing import Optional
-
 import httpx
 
 
 class BaseApi:
     def __init__(self):
-        self.client: Optional[httpx.AsyncClient] = None
+        self.client: httpx.AsyncClient | None = None
 
     async def __aenter__(self):
         self.initialise()

@@ -1,10 +1,7 @@
-from typing import Optional
-
 from fastapi import Depends, WebSocket
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import JWTDecodeError
 
-from wealth.database.api import engine
 from wealth.database.models import User
 
 from .models import LoginUser
@@ -12,11 +9,11 @@ from .passwords import check_password
 
 
 class WealthJwt(AuthJWT):
-    async def get_jwt_user(self) -> Optional[User]:
+    async def get_jwt_user(self) -> User | None:
         user_id = self.get_jwt_subject()
         if user_id is None:
             return None
-        user = await engine.get_user_by_email(user_id)
+        user = await User.find_one(User.email == user_id)
         return user
 
     async def get_authenticated_jwt_user(self) -> User:
@@ -32,9 +29,9 @@ class WealthJwt(AuthJWT):
     def jwt_forbidden(
         self,
         auth_from: str = "request",
-        token: Optional[str] = None,
-        websocket: Optional[WebSocket] = None,
-        csrf_token: Optional[str] = None,
+        token: str | None = None,
+        websocket: WebSocket | None = None,
+        csrf_token: str | None = None,
     ):
         """
         Checks that there is no JWT
@@ -47,7 +44,7 @@ class WealthJwt(AuthJWT):
             )
 
     async def login_user(self, user: LoginUser) -> User:
-        db_user = await engine.find_one(User, User.email == user.email)
+        db_user = await User.find_one(User.email == user.email)
         if not db_user or not check_password(user.password, db_user.password):
             raise JWTDecodeError(status_code=401, message="User and password combination not correct")
         return db_user

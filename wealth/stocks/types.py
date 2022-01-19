@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -21,8 +20,8 @@ class StockPositionRequest(BaseModel):
 
 
 class StockPositionUpdate(BaseModel):
-    amount: Optional[float]
-    start_date: Optional[date]
+    amount: float | None
+    start_date: date | None
 
 
 class StockPositionResponse(BaseModel):
