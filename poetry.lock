@@ -36,6 +36,7 @@ python-versions = ">=3.6.2"
 
 [package.dependencies]
 lazy-object-proxy = ">=1.4.0"
+setuptools = ">=20.0"
 wrapt = ">=1.11,<1.14"
 
 [[package]]
@@ -1101,8 +1102,22 @@ coverage = ">=4.5.2"
 deepdiff = ">=3.3.0"
 inspecta = ">=0.1.0"
 rootpath = ">=0.1.1"
+setuptools = ">=40.8.0"
 six = ">=1.11.0"
 tox = ">=3.0.0"
+
+[[package]]
+name = "setuptools"
+version = "60.5.0"
+description = "Easily download, build, install, upgrade, and uninstall Python packages"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinxcontrib-towncrier", "furo"]
+testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "pytest-perf", "mock", "flake8-2020", "virtualenv (>=13.0.0)", "wheel", "paver", "pip (>=19.1)", "jaraco.envs (>=2.2)", "pytest-xdist", "sphinx (>=4.3.2)", "jaraco.path (>=3.2.0)", "build", "filelock (>=3.4.0)", "pytest-black (>=0.3.7)", "pytest-mypy"]
+testing-integration = ["pytest", "pytest-xdist", "pytest-enabler", "virtualenv (>=13.0.0)", "tomli", "wheel", "jaraco.path (>=3.2.0)", "jaraco.envs (>=2.2)", "build", "filelock (>=3.4.0)"]
 
 [[package]]
 name = "six"
@@ -1277,7 +1292,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "3.10.1"
-content-hash = "33b0d0153a200bf8c89840ea60e61c4fb1604e3b45601b7a69833dedc3c57229"
+content-hash = "09be2b6c68f085f37b903567ffb32f7424d09b9cf9be16a9cfe00d3023017ecb"
 
 [metadata.files]
 anyio = [
@@ -2091,6 +2106,10 @@ sentry-sdk = [
 setupextras = [
     {file = "setupextras-0.1.5-py3-none-any.whl", hash = "sha256:b065860551e9dd422efe35c15dd8cd7edf9ebaeb1309a7bca5475b6010f926aa"},
     {file = "setupextras-0.1.5.tar.gz", hash = "sha256:2c21d99d01fdf3340a67066fcd0a97aae3f2f24b305d6c11b196526faa91df1a"},
+]
+setuptools = [
+    {file = "setuptools-60.5.0-py3-none-any.whl", hash = "sha256:68eb94073fc486091447fcb0501efd6560a0e5a1839ba249e5ff3c4c93f05f90"},
+    {file = "setuptools-60.5.0.tar.gz", hash = "sha256:2404879cda71495fc4d5cbc445ed52fdaddf352b36e40be8dcc63147cb4edabe"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
