@@ -32,6 +32,7 @@ python-dateutil = "*"
 nest-asyncio = "*"
 sentry-sdk = "*"
 time-machine = "*"
+setupextras = "^0.1.5"
 
 [tool.poetry.dev-dependencies]
 black = "*"
