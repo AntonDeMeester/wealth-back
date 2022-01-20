@@ -1,0 +1,43 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+black = "*"
+mypy = "*"
+pytest = "*"
+pylint = "*"
+isort = "*"
+pytest-cov = "*"
+bpython = "*"
+radon = "*"
+pre-commit = "*"
+pymongo-inmemory = "*"
+pytest-asyncio = "*"
+pytest-httpx = "*"
+setupextras = "*"
+types-python-dateutil = "*"
+time-machine = "*"
+
+[packages]
+fastapi = "*"
+uvicorn = "*"
+requests = "*"
+config2 = "*"
+boto3 = "*"
+fastapi-jwt-auth = "*"
+bcrypt = "*"
+httpx = "*"
+pymongo = {extras = ["srv"], version = "==3.12.0"}
+python-dateutil = "*"
+nest-asyncio = "*"
+sentry-sdk = "*"
+time-machine = "*"
+beanie = "*"
+
+[requires]
+python_version = "3.10"
+
+[pipenv]
+allow_prereleases = true
