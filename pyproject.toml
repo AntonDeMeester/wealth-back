@@ -51,5 +51,5 @@ types-python-dateutil = "*"
 time-machine = "*"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["setuptools", "poetry_core>=1.0"]
 build-backend = "poetry.core.masonry.api"
