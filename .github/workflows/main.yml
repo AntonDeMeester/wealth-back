@@ -20,10 +20,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install poetry
-          poetry install
+          pip install pipenv
+          pipenv sync --dev --system
       - name: Linting
-        run: poetry run make check
+        run: make check
       - name: Test with pytest
         env: # Set the secret as an input
           TINK_CLIENT_ID: tink-client-id
@@ -32,4 +32,4 @@ jobs:
           APP_SECRET: some-app-secret
           ENV: local
           KLARNA_API_KEY: klarna-api-key
-        run: poetry run make test
+        run: make test
