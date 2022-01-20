@@ -17,7 +17,7 @@ description = ""
 authors = ["Anton De Meester <antondemeester@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "3.10.2"
+python = "3.10.1"
 fastapi = "*"
 uvicorn = "*"
 requests = "*"
