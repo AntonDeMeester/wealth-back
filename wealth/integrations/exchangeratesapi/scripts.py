@@ -3,10 +3,12 @@ import io
 import logging
 from csv import DictReader
 from tempfile import TemporaryFile
+from typing import IO
 from zipfile import ZipFile
 
 import httpx
 
+from wealth.database.api import init_database
 from wealth.database.models import ExchangeRate, ExchangeRateItem
 from wealth.logging import set_up_logging
 from wealth.parameters.constants import Currency
@@ -18,20 +20,17 @@ EXCHANGE_RATE_FILE_LINK = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-h
 NA = "N/A"
 
 
-async def import_from_ecb():
-    """
-    Imports the exchange rates in the database.
-    Data can be loaded here:
-    https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
-    """
-    LOGGER.info("Starting to get the new exchange rates from the ECB")
+async def download_from_ecb() -> IO:
     response = httpx.get("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip")
     if response.is_error:
         raise ValueError(f"Could not retrieve the history from the ECB. Git a {response.status_code} with {response.text}")
     temp_file = TemporaryFile("wb+")
     temp_file.write(response.content)
     temp_file.seek(0)
+    return temp_file
 
+
+def parse_ecb_file(temp_file: IO) -> list[dict]:
     with ZipFile(temp_file) as zip_file:
         names = zip_file.namelist()
         if not names:
@@ -40,7 +39,11 @@ async def import_from_ecb():
             with io.TextIOWrapper(binary_file, encoding="utf-8") as text_file:
                 reader = DictReader(text_file)
                 raw_rates = list(reader)
+    temp_file.close()
+    return raw_rates
 
+
+async def parse_raw_rates(raw_rates: list) -> list[ExchangeRate]:
     parsed_rates = []
     for c in Currency:
         if c == Currency.EUR:
@@ -59,6 +62,20 @@ async def import_from_ecb():
             conversion_rate = row.get(parsed.currency.value, NA)
             if conversion_rate != NA:
                 parsed.rates.append(ExchangeRateItem(date=date, rate=float(conversion_rate)))
+    return parsed_rates
+
+
+async def import_from_ecb():
+    """
+    Imports the exchange rates in the database.
+    Data can be loaded here:
+    https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
+    """
+    LOGGER.info("Starting to get the new exchange rates from the ECB")
+    await init_database()
+    f = await download_from_ecb()
+    raw_rates = parse_ecb_file(f)
+    parsed_rates = await parse_raw_rates(raw_rates)
 
     await asyncio.gather(*[p.save() for p in parsed_rates])
     LOGGER.info("Done with the get the new exchange rates from the ECB")
