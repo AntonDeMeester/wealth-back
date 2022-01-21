@@ -274,10 +274,10 @@ class TinkLogic:
         This will be saved in the database
         """
         LOGGER.info("Executing callback logic for Tink credentials")
-        code = await self.server.get_access_token_for_user(user.tink_user_id)
-        await self.initialise_tink_api(code)
         if not user.tink_user_id:
             user = await self.create_tink_user(user)
+        code = await self.server.get_access_token_for_user(user.tink_user_id)
+        await self.initialise_tink_api(code)
         user = await self.update_acccounts_of_credential(user, credential_id)
         return user
 
