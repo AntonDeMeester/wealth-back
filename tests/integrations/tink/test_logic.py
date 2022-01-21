@@ -347,7 +347,9 @@ class TestTinkLogic:
         credentials = "cred-123"
 
         async with TinkLogic() as logic:
-            with patch.object(logic, "update_acccounts_of_credential") as update_acccounts_of_credential:
+            with patch.object(logic, "update_acccounts_of_credential") as update_acccounts_of_credential, patch.object(
+                logic.api, "initialise_code"
+            ) as initialise_code, patch.object(logic.server, "get_access_token_for_user") as initialise_code:
                 await logic.execute_callback_for_credentials(credentials, user)
 
         update_acccounts_of_credential.assert_called_with(user, credentials)
