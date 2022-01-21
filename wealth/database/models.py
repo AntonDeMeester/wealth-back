@@ -160,6 +160,9 @@ class User(Document):
         use_cache = True
         cache_expiration_time = timedelta(minutes=15)
 
+    class Collection:
+        name = "user"
+
     @property
     def assets(self) -> List[AssetClass]:
         assets: List[AssetClass] = []
@@ -226,7 +229,7 @@ class ExchangeRate(Document):
         return self.currency == other.currency
 
     class Collection:
-        name = "exchange_rates"
+        name = "exchange_rate"
 
 
 class StockTickerItem(BaseModel):
@@ -250,4 +253,4 @@ class StockTicker(Document):
         return {r.date.date(): r.price for r in self.rates}
 
     class Collection:
-        name = "stock_tickers"
+        name = "stock_ticker"

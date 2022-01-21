@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from wealth.custom_assets.scripts import update_all_custom_asset_balances
+from wealth.database.api import init_database
 from wealth.integrations.alphavantage.scripts import update_all_tickers
 from wealth.integrations.exchangeratesapi.scripts import import_from_ecb
 from wealth.integrations.tink.scripts import update_tink_for_all_users
@@ -13,6 +14,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def run_daily_scripts():
+    await init_database()
     scripts = [
         import_from_ecb,
         update_all_tickers,

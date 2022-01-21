@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
+from .database.api import init_database
 from .logging import set_up_logging
 from .parameters import env
 from .routers import router
@@ -32,6 +33,11 @@ app.add_middleware(GZipMiddleware)
 if env.SENTRY_DSN:
     sentry_sdk.init(dsn=env.SENTRY_DSN)
     app.add_middleware(SentryAsgiMiddleware)
+
+
+@app.on_event("startup")
+async def init_db():
+    await init_database()
 
 
 @app.exception_handler(AuthJWTException)
