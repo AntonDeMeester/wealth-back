@@ -29,7 +29,7 @@ async def update_tink_for_user(user: User) -> User:
     if not user.tink_user_id:
         return user
     async with TinkLogic() as logic:
-        user = await logic.update_credential_status(user)
+        user = await logic.update_all_credential_statuses(user)
         user = await logic.refresh_user_from_backend(user)
     return user
 
