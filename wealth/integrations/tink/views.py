@@ -51,7 +51,7 @@ async def tink_callback_authorize(
     return TinkLinkRedirectResponse(url=url)
 
 
-@router.post("/bank/refresh/{credential_id}")
+@router.get("/bank/refresh/{credential_id}")
 async def tink_refresh_credential(credential_id: str, user: User = Depends(get_authenticated_user)) -> TinkLinkRedirectResponse:
     """
     Returns the TinkLink URL to add a bank

@@ -156,10 +156,6 @@ class User(Document):
     # Tink stuff
     tink_user_id: str = ""
 
-    class Settings:
-        use_cache = True
-        cache_expiration_time = timedelta(minutes=15)
-
     class Collection:
         name = "user"
 

@@ -35,4 +35,5 @@ class UpdateAccountResponse(BaseModel):
     bank: str = ""
     bank_alias: str = ""
 
+    credential_id: str | None
     credential_status: TinkCredentialStatus | None
