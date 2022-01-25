@@ -11,7 +11,7 @@ def set_up_wrapper():
         nonlocal set_up
         if set_up:
             return
-        logger = logging.getLogger()
+        logger = logging.getLogger("wealth")
         logger.setLevel(env.LOG_LEVEL)
 
         handler = logging.StreamHandler(sys.stdout)

@@ -28,8 +28,8 @@ async def update_real_data():
 async def main():
     # await create_stock_ticker()
     # await import_from_ecb()
-    # await run_daily_scripts()
-    await update_real_data()
+    await run_daily_scripts()
+    # await update_real_data()
 
 
 if __name__ == "__main__":

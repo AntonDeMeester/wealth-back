@@ -5,7 +5,15 @@ from wealth.parameters.constants import Currency
 from wealth.util.base_api import BaseApi
 
 from .exceptions import AlphaVantageRuntimeException, TickerNotFoundException
-from .parameters import ALPHA_VANTAGE_API_KEY, ALPHA_VANTAGE_BASE_URL, FUNCTION_SEARCH, FUNCTION_TIME_SERIES
+from .parameters import (
+    ALPHA_VANTAGE_API_KEY,
+    ALPHA_VANTAGE_BASE_URL,
+    ALPHA_VANTAGE_RAPID_API_BASE_URL,
+    ALPHA_VANTAGE_RAPID_API_KEY,
+    ALPHA_VANTAGE_USE_RAPID_API,
+    FUNCTION_SEARCH,
+    FUNCTION_TIME_SERIES,
+)
 from .types import SearchResponse, TimeSeriesDailyResponse
 
 
@@ -47,8 +55,16 @@ class AlphaVantageApi(BaseApi):
             raise AlphaVantageRuntimeException(
                 "Client is not initialized. Please use am async context manager with the Alpha Vantage API"
             )
-        all_params = {"apikey": ALPHA_VANTAGE_API_KEY} | params
-        response = await self.client.get(ALPHA_VANTAGE_BASE_URL, params=all_params)
+
+        # Rapid API allows some endpoints to be free
+        if ALPHA_VANTAGE_USE_RAPID_API:
+            # See https://rapidapi.com/alphavantage/api/alpha-vantage/
+            headers = {"x-rapidapi-host": "alpha-vantage.p.rapidapi.com", "x-rapidapi-key": ALPHA_VANTAGE_RAPID_API_KEY}
+            response = await self.client.get(ALPHA_VANTAGE_RAPID_API_BASE_URL, params=params, headers=headers)
+        else:
+            all_params = {"apikey": ALPHA_VANTAGE_API_KEY} | params
+            response = await self.client.get(ALPHA_VANTAGE_BASE_URL, params=all_params)
+
         if response.is_error:
             raise AlphaVantageRuntimeException(f"Error in AlphaVantage API. {response.status_code} with {response}")
         response_data = response.json()
