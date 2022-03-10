@@ -2,6 +2,8 @@ infra:
   vpc_name: wealth-staging
 cors:
   - https://web.illuminatus.be
+  - https://kassandr.ai
+  - https://kassandrai.com
   - http://localhost
   - http://localhost:3000
   - http://localhost:8100
