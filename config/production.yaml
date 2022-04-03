@@ -2,8 +2,8 @@ infra:
   vpc_name: wealth-staging
 cors:
   - https://web.illuminatus.be
-  - https://kassandr.ai
-  - https://kassandrai.com
+  - https://web.kassandr.ai
+  - https://web.kassandrai.com
   - http://localhost
   - http://localhost:3000
   - http://localhost:8100
@@ -12,4 +12,4 @@ cors:
   - http://127.0.0.1:8100
   - https://3000-indigo-junglefowl-z05m4bv2.ws-eu15.gitpod.io
 frontend:
-  url: "https://web.illuminatus.be"
+  url: "https://web.kassandr.ai"
