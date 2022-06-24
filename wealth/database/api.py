@@ -9,5 +9,9 @@ async def init_database(client: AsyncIOMotorClient | None = None):
         client = AsyncIOMotorClient(env.MONGO_URL, uuidRepresentation="standard")
     await init_beanie(
         database=client[GeneralParameters.MONGO_DATABASE_NAME],
-        document_models=["wealth.database.User", "wealth.database.ExchangeRate", "wealth.database.StockTicker"],
+        document_models=[
+            "wealth.database.models.User",
+            "wealth.database.models.ExchangeRate",
+            "wealth.database.models.StockTicker",
+        ],
     )
