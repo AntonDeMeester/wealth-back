@@ -47,7 +47,6 @@ class TinkServerApi(BaseApi):
     Use a async context manager to use, to make sure the connections are closed properly.
     """
 
-    # pylint: disable=no-self-use
     async def _tink_request(self, endpoint: str, data: dict, headers: dict = None, is_json=True) -> dict:
         if self.client is None:
             raise TinkRuntimeException("Client is not initialized. Please use am async context manager with the TinkApi")
@@ -218,7 +217,6 @@ class TinkApi(BaseApi):
         LOGGER.debug(f"Received {response.status_code} response from Tink: {response.text}")
         return response.json()
 
-    # pylint: disable=no-self-use
     async def _tink_auth_request(self, data: OAuthTokenRequestParameters) -> dict:
         """Queries the Token endpoint of Tink with the provided request. Returns the response"""
         if self.client is None:
@@ -279,7 +277,6 @@ class TinkApi(BaseApi):
 
 
 class TinkLinkApi:
-    # pylint: disable=no-self-use
     def _format_link(self, endpoint: str, query_params: TinkLinkQueryParameters) -> str:
         url = f"{p.TINK_LINK_BASE_URL}{endpoint}"
         non_empty_params = query_params.dict(exclude_none=True)

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 
 import sentry_sdk
 
@@ -37,8 +36,8 @@ async def run_daily_scripts():
             await function()
         except Exception as e:  # pylint: disable=broad-except
             LOGGER.error(f"Error when running {function.__name__}: {e}", exc_info=True)
-            LOGGER.error(f"Continuing with the next function")
-            LOGGER.error(f"---------------------------------")
+            LOGGER.error("Continuing with the next function")
+            LOGGER.error("---------------------------------")
 
 
 if __name__ == "__main__":

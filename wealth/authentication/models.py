@@ -42,14 +42,14 @@ class CreateUser(ViewUser):
         return email
 
     @validator("password", "password2")
-    # pylint: disable=no-self-argument,no-self-use
+    # pylint: disable=no-self-argument
     def validate_password(cls, password: str) -> bytes:
         if not validate_password(password):
             raise ValueError("Invalid password")
         return encode_password(password)
 
     @root_validator(pre=True)
-    # pylint: disable=no-self-argument,no-self-use
+    # pylint: disable=no-self-argument
     def validate_passwords(cls, values):
         pw1, pw2 = values.get("password"), values.get("password2")
         if pw1 is not None and pw2 is not None and pw1 != pw2:

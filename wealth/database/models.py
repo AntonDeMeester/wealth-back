@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from enum import Enum
 from typing import List, Protocol, Union
 from uuid import UUID, uuid4
@@ -20,7 +20,7 @@ class WealthItem(BaseModel):
     raw: str = ""
 
     @validator("date", pre=True)
-    # pylint: disable=no-self-argument,no-self-use
+    # pylint: disable=no-self-argument
     def convert_date(cls, v) -> datetime:
         return convert_datetime(v)
 
@@ -104,7 +104,7 @@ class StockPosition(AssetClassMethods, BaseModel):
     balances: List[WealthItem] = []
 
     @validator("start_date", pre=True)
-    # pylint: disable=no-self-argument,no-self-use
+    # pylint: disable=no-self-argument
     def convert_date(cls, v):
         return convert_datetime(v)
 
@@ -114,7 +114,7 @@ class AssetEvent(BaseModel):
     amount: float
 
     @validator("date", pre=True)
-    # pylint: disable=no-self-argument,no-self-use
+    # pylint: disable=no-self-argument
     def convert_date(cls, v):
         return convert_datetime(v)
 
@@ -204,7 +204,7 @@ class ExchangeRateItem(BaseModel):
     rate: float
 
     @validator("date", pre=True)
-    # pylint: disable=no-self-argument,no-self-use
+    # pylint: disable=no-self-argument
     def convert_date(cls, v):
         return convert_datetime(v)
 
@@ -233,7 +233,7 @@ class StockTickerItem(BaseModel):
     price: float
 
     @validator("date", pre=True)
-    # pylint: disable=no-self-argument,no-self-use
+    # pylint: disable=no-self-argument
     def convert_date(cls, v):
         return convert_datetime(v)
 

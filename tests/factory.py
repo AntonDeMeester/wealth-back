@@ -1,11 +1,9 @@
 from typing import Any, Callable, Literal, Protocol, Type, TypeVar, Union, overload
 
-from beanie import Document
 from pydantic import BaseModel
 
 T = TypeVar("T", covariant=True)
 P = TypeVar("P", bound=BaseModel)
-D = TypeVar("D", bound=Document)
 
 SpecialCaseDict = dict[str, Callable[[Any], Any]]
 
@@ -24,8 +22,8 @@ class ModelGenerator(Protocol[T]):
 
 
 def database_model_generator(
-    model_type: Type[D], defaults: dict, special_cases: SpecialCaseDict | None = None
-) -> ModelGenerator[D]:
+    model_type: Type[P], defaults: dict, special_cases: SpecialCaseDict | None = None
+) -> ModelGenerator[P]:
     _special_cases = special_cases if special_cases is not None else {}
 
     @overload
@@ -33,10 +31,10 @@ def database_model_generator(
         pass
 
     @overload
-    def _generate_model(*, _raw: Literal[False] = False, **kwargs) -> D:
+    def _generate_model(*, _raw: Literal[False] = False, **kwargs) -> P:
         pass
 
-    def _generate_model(*, _raw=False, **kwargs) -> Union[D, dict]:
+    def _generate_model(*, _raw=False, **kwargs) -> Union[P, dict]:
         all_data = defaults | kwargs
         for key, to_be_called in _special_cases.items():
             all_data[key] = to_be_called(all_data[key])
